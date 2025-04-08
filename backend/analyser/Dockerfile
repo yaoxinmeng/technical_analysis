@@ -8,10 +8,6 @@ WORKDIR /app
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Install playwright for scraping
-RUN playwright install chromium
-RUN playwright install-deps
-
 # import source code
 COPY app /app/app
 

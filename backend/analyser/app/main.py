@@ -2,7 +2,6 @@ from fastapi import FastAPI
 from contextlib import asynccontextmanager
 
 from app.core.logging import config_logger
-from app.router import infer
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -15,4 +14,3 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(lifespan=lifespan)
 
-app.include_router(infer.router, prefix="/infer", tags=["Infer"])

@@ -1,0 +1,40 @@
+name: technical-analysis
+services:
+  scraper:
+    build: ./backend/scraper
+    environment:
+      - ENV=debug
+      - BEDROCK_LLM_ID=mistral.mistral-7b-instruct-v0:2
+      - AWS_ACCESS_KEY_ID
+      - AWS_SECRET_ACCESS_KEY
+      - AWS_SESSION_TOKEN
+      - AWS_DEFAULT_REGION=us-east-1
+    ports:
+      - "8000:8000"
+
+  analyser:
+    build: ./backend/analyser
+    environment:
+      - ENV=debug
+      - SCRAPER_ENDPOINT=http://scraper:8000
+      - MONGO_ENDPOINT=mongodb://mongodb:27017
+      - MONGO_INITDB_ROOT_USERNAME
+      - MONGO_INITDB_ROOT_PASSWORD
+    ports:
+      - "8001:8000"
+    depends_on:
+      - scraper
+      - mongodb
+
+  mongodb:
+    image: mongo:latest
+    volumes:
+      - mongo-data:/data/db
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME
+      - MONGO_INITDB_ROOT_PASSWORD
+    expose:
+      - "27017"
+    
+volumes:
+  mongo-data: {}
