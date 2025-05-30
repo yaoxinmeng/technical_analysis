@@ -1,11 +1,11 @@
 import re
 from loguru import logger
-import bs4
-from playwright.async_api import async_playwright
+
+from app.service.scraper import playwright_scrape
 
 ROOT_YAHOO_URL = "https://sg.finance.yahoo.com/quote"
 
-async def scrape(id: str) -> str:
+async def scrape_financials(id: str) -> str:
     """
     Call to scrape the contents of a web page. Retrieves only textual elements and images.
 
@@ -14,20 +14,18 @@ async def scrape(id: str) -> str:
     """
     # scrape sector information
     results = await asyncio.gather(
-        scrape_main(id),
-        scrape_financials(id),
-        scrape_balance(id),
-        scrape_price(id)
+        scrape_financial_statement(id),
+        scrape_balance(id)
     )
 
-    return {"overview": results[0], "financials": results[1], "balance-sheet": results[2], "price": results[3]}
+    return {"financial_statement": results[10], "balance-sheet": results[1]}
 
 
 async def scrape_main(id: str) -> dict[str, str]:
     """
     Scrape the main page.
     """
-    soup = await _playwright_scrape(f"{ROOT_YAHOO_URL}/{id}")
+    soup = await playwright_scrape(f"{ROOT_YAHOO_URL}/{id}")
 
     # scrape sector information
     elements = soup.find_all(string="Sector")
@@ -63,15 +61,15 @@ async def scrape_main(id: str) -> dict[str, str]:
     return {"sector": sector, "exchange_currency": currency}
 
 
-async def scrape_price(id: str) -> str:
+async def scrape_price(id: str) -> float:
     """
     Scrape the price page.
     """
-    soup = await _playwright_scrape(f"{ROOT_YAHOO_URL}/{id}/history")
+    soup = await playwright_scrape(f"{ROOT_YAHOO_URL}/{id}/history")
     tables = soup.find_all("table")
     if not tables:
         logger.error(f"No table found in page for {id}.")
-        return ""
+        return -1
     if len(tables) > 1:
         logger.warning(f"Multiple tables found for {id}. Using the first one.")
         logger.debug(f"Found tables: {tables}")
@@ -81,7 +79,7 @@ async def scrape_price(id: str) -> str:
     header_row = table.find("thead").find("tr")
     if not header_row:
         logger.error(f"No header row found in table for {id}.")
-        return ""
+        return -1
     headers = [th.get_text(strip=True) for th in header_row.find_all("th")]
 
     # get index of close price
@@ -92,23 +90,30 @@ async def scrape_price(id: str) -> str:
             break
     if close_index is None:
         logger.error(f"Close price not found in headers for {id}.")
-        return ""
+        return -1
 
     # get first row of data
     first_row = table.find("tbody").find("tr")
     if not first_row:
         logger.error(f"No data rows found in table for {id}.")
-        return ""
+        return -1
     data = [td.get_text(strip=True) for td in first_row.find_all("td")]
 
-    return data[close_index]
+    # convert close price to float
+    try:
+        price = float(data[close_index].replace(",", ""))
+    except ValueError as e:
+        logger.error(f"Error converting close price to float for {id}: {e}")
+        return 0
+    
+    return price
 
 
-async def scrape_financials(id: str) -> dict[str, dict[str, int]]:
+async def scrape_financial_statement(id: str) -> dict[str, dict[str, int]]:
     """
-    Scrape the financials page.
+    Scrape the financial statement page.
     """
-    soup = await _playwright_scrape(f"{ROOT_YAHOO_URL}/{id}/financials")
+    soup = await playwright_scrape(f"{ROOT_YAHOO_URL}/{id}/financials")
     header_div = soup.find("div", attrs={"class": "tableHeader"})
     headers = [div.get_text(strip=True) for div in header_div.find("div").find_all("div")]
     if len(headers) < 2:
@@ -157,7 +162,7 @@ async def scrape_balance(id: str) -> dict[str, dict[str, int]]:
     """
     Scrape the balance sheet page.
     """
-    soup = await _playwright_scrape(f"{ROOT_YAHOO_URL}/{id}/balance-sheet")
+    soup = await playwright_scrape(f"{ROOT_YAHOO_URL}/{id}/balance-sheet")
     header_div = soup.find("div", attrs={"class": "tableHeader"})
     headers = [div.get_text(strip=True) for div in header_div.find("div").find_all("div")]
     if len(headers) < 2:
@@ -198,27 +203,6 @@ async def scrape_balance(id: str) -> dict[str, dict[str, int]]:
     return results
 
 
-async def _playwright_scrape(url: str) -> bs4.BeautifulSoup:
-    """
-    Scrape the contents of a page using the Playwright Sync API.
-    """
-    async with async_playwright() as playwright:
-        browser = await playwright.chromium.launch(headless=False)
-        context = await browser.new_context(user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3")
-        page = await context.new_page()
-        try:
-            await page.goto(url, timeout=10000)  # 10 seconds timeout
-        except Exception as e:
-            logger.error(f"Error loading page: {e}") 
-        try:    # attempts to retrieve page contents regardless
-            content = await page.content()
-        except Exception as e:
-            logger.error(f"Error retrieving page content: {e}") 
-            content = ""
-        await browser.close()
-    return bs4.BeautifulSoup(content, "html.parser")
-
-
 if __name__ == "__main__":
     import asyncio
     # Example usage
@@ -228,7 +212,7 @@ if __name__ == "__main__":
     content = asyncio.run(scrape_price("0005.HK"))
     print("Price Information:")
     print(content)
-    content = asyncio.run(scrape_financials("0005.HK"))
+    content = asyncio.run(scrape_financial_statement("0005.HK"))
     print("Financials Information:")
     print(content)
     content = asyncio.run(scrape_balance("0005.HK"))
