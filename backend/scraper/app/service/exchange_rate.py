@@ -1,8 +1,6 @@
 from loguru import logger
 import requests
 
-from app.service.scraper import playwright_scrape
-
 ROOT_EXCHANGE_URL = "https://www.xe.com/api"
 
 def get_exchange_rate(curr1: str, curr2: str) -> float:

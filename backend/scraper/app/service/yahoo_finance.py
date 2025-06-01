@@ -1,71 +1,64 @@
 import re
+import subprocess
 from loguru import logger
-
-from app.service.scraper import playwright_scrape
+import bs4
 
 ROOT_YAHOO_URL = "https://sg.finance.yahoo.com/quote"
 
-async def scrape_financials(id: str) -> str:
-    """
-    Call to scrape the contents of a web page. Retrieves only textual elements and images.
 
-    :param str url: The URL of the web page to scrape.
-    :return str: The content of the web page rendered in Markdown.
-    """
-    # scrape sector information
-    results = await asyncio.gather(
-        scrape_financial_statement(id),
-        scrape_balance(id)
-    )
-
-    return {"financial_statement": results[10], "balance-sheet": results[1]}
-
-
-async def scrape_main(id: str) -> dict[str, str]:
+def scrape_main(id: str) -> dict[str, str]:
     """
     Scrape the main page.
     """
-    soup = await playwright_scrape(f"{ROOT_YAHOO_URL}/{id}")
+    content = subprocess.check_output(["scripts/playwright_exec.sh", f"{ROOT_YAHOO_URL}/{id}"], stderr=subprocess.STDOUT)
+    soup = bs4.BeautifulSoup(content, "html.parser")
+    results = {"sector": "", "exchange_currency": "", "name": ""}
+
+    # scrape name
+    h1_elements = soup.find_all("h1")
+    name_elements = [el for el in h1_elements if id in el.get_text(strip=True)]
+    if not name_elements:
+        logger.error(f"No name found for {id}.")
+    else:
+        if len(name_elements) > 1:
+            logger.warning(f"Multiple name elements found for {id}. Using the first one.")
+            logger.debug(f"Found elements: {name_elements}")
+        name = name_elements[0].get_text(strip=True)
+        name = re.sub(r"\s*\(.*?\)\s*", "", name)  # remove any text in parentheses
+        results["name"] = name
 
     # scrape sector information
     elements = soup.find_all(string="Sector")
     if not elements:
         logger.error(f"No sector information found for {id}.")
-        return ""
-    if len(elements) > 1:
-        logger.warning(f"Multiple sector elements found for {id}. Using the first one.")
-        logger.debug(f"Found elements: {elements}")
-    
-    parent = elements[0].find_parent()
-    siblings = parent.find_previous_siblings() + parent.find_next_siblings()
-    sector = siblings[0].get_text(strip=True)
-
-    if not siblings:
-        logger.error(f"No siblings found for sector element of {id}.")
-        return ""
-    if len(siblings) > 1:
-        logger.warning(f"Multiple siblings found for sector element of {id}. Using the first one.")
-        logger.debug(f"Found siblings: {siblings}")
+    else:
+        if len(elements) > 1:
+            logger.warning(f"Multiple sector elements found for {id}. Using the first one.")
+            logger.debug(f"Found elements: {elements}")
+        parent = elements[0].find_parent()
+        siblings = parent.find_previous_siblings() + parent.find_next_siblings()
+        results["sector"] = siblings[0].get_text(strip=True)
     
     # scrape currency information
     currency_element_parent = soup.find("span", attrs={"class": "exchange"})
     if not currency_element_parent:
         logger.error(f"No currency information found for {id}.")
-        return ""
-    currency_element = currency_element_parent.find_all("span")[-1]
-    if not currency_element:
-        logger.error(f"No currency information found for {id}.")
-        return ""
-    currency = currency_element.get_text(strip=True)
+    else:
+        currency_element = currency_element_parent.find_all("span")[-1]
+        if not currency_element:
+            logger.error(f"No currency information found for {id}.")
+            return {}
+        results["exchange_currency"] = currency_element.get_text(strip=True)
     
-    return {"sector": sector, "exchange_currency": currency}
+    return results
 
 
-async def scrape_price(id: str) -> float:
+def scrape_price(id: str) -> float:
     """
     Scrape the price page.
     """
-    soup = await playwright_scrape(f"{ROOT_YAHOO_URL}/{id}/history")
+    content = subprocess.check_output(["scripts/playwright_exec.sh", f"{ROOT_YAHOO_URL}/{id}/history"], stderr=subprocess.STDOUT)
+    soup = bs4.BeautifulSoup(content, "html.parser")
     tables = soup.find_all("table")
     if not tables:
         logger.error(f"No table found in page for {id}.")
@@ -109,81 +102,93 @@ async def scrape_price(id: str) -> float:
     return price
 
 
-async def scrape_financial_statement(id: str) -> dict[str, dict[str, int]]:
+def scrape_financial_statement(id: str) -> dict[str, dict[str, int]]:
     """
     Scrape the financial statement page.
     """
-    soup = await playwright_scrape(f"{ROOT_YAHOO_URL}/{id}/financials")
-    header_div = soup.find("div", attrs={"class": "tableHeader"})
-    headers = [div.get_text(strip=True) for div in header_div.find("div").find_all("div")]
-    if len(headers) < 2:
-        logger.error(f"Not enough headers found in financials page for {id}.")
-        logger.debug(f"Headers found: {headers}")
-        return ""
-    headers = headers[1:] 
+    content = subprocess.check_output(["scripts/playwright_exec.sh", f"{ROOT_YAHOO_URL}/{id}/financials"], stderr=subprocess.STDOUT)
+    soup = bs4.BeautifulSoup(content, "html.parser")
 
-    # get relevant data rows
-    income_row = soup.find("div", string="Diluted NI available to com stockholders").find_parent().find_next_siblings()
-    if len(income_row) < 2:
-        logger.error(f"Not enough data rows found in financials page for {id}.")
-        return ""
-    shares_row = soup.find("div", string="Diluted average shares").find_parent().find_next_siblings()
-    if len(shares_row) < 2:
-        logger.error(f"Not enough data rows found in financials page for {id}.")
-        return ""
+    def parse_financials_table(soup: bs4.BeautifulSoup) -> dict[str, int]:
+        """
+        Parse a financials table and return a dictionary of financial data.
+        """
+        header_div = soup.find("div", attrs={"class": "tableHeader"})
+        headers = [div.get_text(strip=True) for div in header_div.find("div").find_all("div")]
+        if len(headers) < 2:
+            logger.error(f"Not enough headers found in financials page for {id}.")
+            logger.debug(f"Headers found: {headers}")
+            return {}
+        headers = headers[1:] 
+
+        # get relevant data rows
+        income_row = soup.find("div", string="Diluted NI available to com stockholders").find_parent().find_next_siblings()
+        if len(income_row) < 2:
+            logger.error(f"Not enough data rows found in financials page for {id}.")
+            return {}
+        shares_row = soup.find("div", string="Diluted average shares").find_parent().find_next_siblings()
+        if len(shares_row) < 2:
+            logger.error(f"Not enough data rows found in financials page for {id}.")
+            return {}
+        
+        results = {}
+        for h, income, shares in zip(headers, income_row, shares_row):
+            income_value = income.get_text(strip=True).replace(",", "")
+            shares_value = shares.get_text(strip=True).replace(",", "")
+            try:
+                results[h] = {
+                    "income": int(float(income_value) * 1000) if income_value else None,
+                    "shares": int(float(shares_value) * 1000) if shares_value else None
+                }
+            except ValueError as e:
+                logger.error(f"Error converting financial data to float for {h} in {id}: {e}")
+                continue 
+        return results   
+
+    def parse_currency(soup: bs4.BeautifulSoup) -> str:
+        """
+        Parse the currency from the financials page.
+        """
+        currency_span = soup.find("span", string=re.compile("Currency in .*"))
+        if not currency_span:
+            logger.error(f"No currency information found in financials page for {id}.")
+            return ""
+        currency_text = currency_span.get_text(strip=True)
+        currency_match = re.search(r"Currency in (.+)", currency_text)
+        currency = currency_match.group(1)
+        return currency.strip()
     
-    results = {}
-    for h, income, shares in zip(headers, income_row, shares_row):
-        income_value = income.get_text(strip=True).replace(",", "")
-        shares_value = shares.get_text(strip=True).replace(",", "")
-        try:
-            results[h] = {
-                "income": int(float(income_value) * 1000) if income_value else None,
-                "shares": int(float(shares_value) * 1000) if shares_value else None
-            }
-        except ValueError as e:
-            logger.error(f"Error converting financial data to float for {h} in {id}: {e}")
-            continue
-
-    # get currency info
-    currency_span = soup.find("span", string=re.compile("Currency in .*"))
-    if not currency_span:
-        logger.error(f"No currency information found in financials page for {id}.")
-        return ""
-    currency_text = currency_span.get_text(strip=True)
-    currency_match = re.search(r"Currency in (.+)", currency_text)
-    currency = currency_match.group(1)
-    results["financials_currency"] = currency.strip()
-    
-    return results
+    return {"financials_currency": parse_currency(soup), "financials": parse_financials_table(soup)}
 
 
-async def scrape_balance(id: str) -> dict[str, dict[str, int]]:
+def scrape_balance(id: str) -> dict[str, dict[str, int]]:
     """
     Scrape the balance sheet page.
     """
-    soup = await playwright_scrape(f"{ROOT_YAHOO_URL}/{id}/balance-sheet")
+    content = subprocess.check_output(["scripts/playwright_exec.sh", f"{ROOT_YAHOO_URL}/{id}/balance-sheet"], stderr=subprocess.STDOUT)
+    soup = bs4.BeautifulSoup(content, "html.parser")
+    
     header_div = soup.find("div", attrs={"class": "tableHeader"})
     headers = [div.get_text(strip=True) for div in header_div.find("div").find_all("div")]
     if len(headers) < 2:
         logger.error(f"Not enough headers found in balance sheet page for {id}.")
         logger.debug(f"Headers found: {headers}")
-        return ""
+        return {}
     headers = headers[1:]  # skip the first header which is usually the date
 
     # get relevant data rows
     assets_row = soup.find("div", string="Total assets").find_parent().find_next_siblings()
     if len(assets_row) < 2:
         logger.error(f"Not enough data rows found in balance sheet page for {id}.")
-        return ""
+        return {}
     liabilities_row = soup.find("div", string="Total liabilities net minority interest").find_parent().find_next_siblings()
     if len(liabilities_row) < 2:
         logger.error(f"Not enough data rows found in balance sheet page for {id}.")
-        return ""
+        return {}
     book_value_row = soup.find("div", string="Tangible book value").find_parent().find_next_siblings()
     if len(book_value_row) < 2:
         logger.error(f"Not enough data rows found in balance sheet page for {id}.")
-        return ""
+        return {}
     
     results = {}
     for h, assets, liabilities, book_value in zip(headers, assets_row, liabilities_row, book_value_row):
@@ -201,20 +206,3 @@ async def scrape_balance(id: str) -> dict[str, dict[str, int]]:
             continue
     
     return results
-
-
-if __name__ == "__main__":
-    import asyncio
-    # Example usage
-    content = asyncio.run(scrape_main("0005.HK"))
-    print("Overview:")
-    print(content)
-    content = asyncio.run(scrape_price("0005.HK"))
-    print("Price Information:")
-    print(content)
-    content = asyncio.run(scrape_financial_statement("0005.HK"))
-    print("Financials Information:")
-    print(content)
-    content = asyncio.run(scrape_balance("0005.HK"))
-    print("Balance Sheet Information:")
-    print(content)

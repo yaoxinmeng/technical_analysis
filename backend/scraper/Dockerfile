@@ -1,6 +1,6 @@
 FROM python:3.10-slim
 
-RUN apt-get update && apt-get -y install gcc g++ git ffmpeg
+RUN apt-get update && apt-get -y install gcc g++ git xvfb
 
 WORKDIR /app
 
@@ -14,6 +14,7 @@ RUN playwright install-deps
 
 # import source code
 COPY app /app/app
+COPY scripts /app/scripts
 
 # set python path
 ENV PYTHONPATH=/app
