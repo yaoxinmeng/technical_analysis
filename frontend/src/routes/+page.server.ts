@@ -1,10 +1,10 @@
-import type { PageServerLoad, Actions } from './$types';
-import db from '$db/mongo';
+import type { PageServerLoad } from './$types';
+import { securities } from '$db/mongo';
 
 export const load: PageServerLoad = async () => {
-    let cursor = db.collection('favourites').find();
-    let favourites = await cursor.toArray();
+    let cursor = securities.find();
+    let documents = await cursor.toArray();
 	return {
-		favourites: favourites
+		securities: documents
 	};
 };

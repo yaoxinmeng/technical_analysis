@@ -9,3 +9,5 @@ export function start_mongo() {
 }
 
 export default client.db()
+
+export const securities = client.db().collection('securities');

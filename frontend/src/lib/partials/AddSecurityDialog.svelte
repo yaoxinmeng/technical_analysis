@@ -59,7 +59,6 @@
                 p-6 shadow-lg"
             transition:scale={{
                 duration: 150,
-                y: 8,
                 start: 0.96,
             }}
         >
