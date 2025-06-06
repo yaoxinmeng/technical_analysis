@@ -8,9 +8,3 @@ export const load: PageServerLoad = async () => {
 		favourites: favourites
 	};
 };
-
-export const actions = {
-	default: async ({ request }) => {
-		
-	}
-} satisfies Actions;
