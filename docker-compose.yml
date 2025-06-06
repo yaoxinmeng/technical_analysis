@@ -10,15 +10,18 @@ services:
       - MONGO_PASSWORD=${MONGO_INITDB_ROOT_PASSWORD}
       - ROOT_USERNAME
       - ROOT_PASSWORD
+      - BACKEND_URL=http://scraper:8000
     ports:
       - "3000:3000"
     depends_on:
       - scraper
+      - mongodb
 
   scraper:
     build: ./backend/scraper
     environment:
       - ENV=debug
+      - PLAYWRIGHT_TIMEOUT=20000
     ports:
       - "8000:8000"
 

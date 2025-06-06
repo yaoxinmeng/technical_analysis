@@ -10,7 +10,10 @@ def scrape_main(id: str) -> dict[str, str]:
     """
     Scrape the main page.
     """
-    content = subprocess.check_output(["scripts/playwright_exec.sh", f"{ROOT_YAHOO_URL}/{id}"], stderr=subprocess.STDOUT)
+    try:
+        content = subprocess.check_output(["scripts/playwright_exec.sh", f"{ROOT_YAHOO_URL}/{id}"], stderr=subprocess.STDOUT)
+    except subprocess.CalledProcessError as exc:
+        raise Exception(f"{exc.returncode}: {exc.output}")
     soup = bs4.BeautifulSoup(content, "html.parser")
     results = {"sector": "", "exchange_currency": "", "name": ""}
 
@@ -57,7 +60,10 @@ def scrape_price(id: str) -> float:
     """
     Scrape the price page.
     """
-    content = subprocess.check_output(["scripts/playwright_exec.sh", f"{ROOT_YAHOO_URL}/{id}/history"], stderr=subprocess.STDOUT)
+    try:
+        content = subprocess.check_output(["scripts/playwright_exec.sh", f"{ROOT_YAHOO_URL}/{id}/history"], stderr=subprocess.STDOUT)
+    except subprocess.CalledProcessError as exc:
+        raise Exception(f"{exc.returncode}: {exc.output}")
     soup = bs4.BeautifulSoup(content, "html.parser")
     tables = soup.find_all("table")
     if not tables:
@@ -106,7 +112,10 @@ def scrape_financial_statement(id: str) -> dict[str, dict[str, int]]:
     """
     Scrape the financial statement page.
     """
-    content = subprocess.check_output(["scripts/playwright_exec.sh", f"{ROOT_YAHOO_URL}/{id}/financials"], stderr=subprocess.STDOUT)
+    try:
+        content = subprocess.check_output(["scripts/playwright_exec.sh", f"{ROOT_YAHOO_URL}/{id}/financials"], stderr=subprocess.STDOUT)
+    except subprocess.CalledProcessError as exc:
+        raise Exception(f"{exc.returncode}: {exc.output}")
     soup = bs4.BeautifulSoup(content, "html.parser")
 
     def parse_financials_table(soup: bs4.BeautifulSoup) -> dict[str, int]:
@@ -165,7 +174,10 @@ def scrape_balance(id: str) -> dict[str, dict[str, int]]:
     """
     Scrape the balance sheet page.
     """
-    content = subprocess.check_output(["scripts/playwright_exec.sh", f"{ROOT_YAHOO_URL}/{id}/balance-sheet"], stderr=subprocess.STDOUT)
+    try:
+        content = subprocess.check_output(["scripts/playwright_exec.sh", f"{ROOT_YAHOO_URL}/{id}/balance-sheet"], stderr=subprocess.STDOUT)
+    except subprocess.CalledProcessError as exc:
+        raise Exception(f"{exc.returncode}: {exc.output}")
     soup = bs4.BeautifulSoup(content, "html.parser")
     
     header_div = soup.find("div", attrs={"class": "tableHeader"})
