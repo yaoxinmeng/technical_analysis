@@ -26,32 +26,40 @@
 </script>
 
 <div class="h-screen w-full px-16 py-8">
-    <h1 class="text-lg font-semibold">Watchlist</h1>
+    <h1 class="text-3xl font-semibold">Watchlist</h1>
     <div class="flex justify-end">
         <AddSecurityDialog handleSave={handleAdd} hasFailed={false} inProgress={inProgress} isOpen={openDialog}/>
     </div>
-    <table>
-        <thead>
-            <tr>
-                <th class="text-left">Symbol</th>
-                <th class="text-left">Name</th>
-                <th class="text-left">Sector</th>
-                <th class="text-left">Price</th>
-                <th class="text-left">Estimated Lower Bound</th>
-                <th class="text-left">Estimated Upper Bound</th>
-            </tr>
-        </thead>
-        <tbody>
-            {#each data.securities as security}
+    <div class="relative flex rounded-xl bg-clip-border mt-8">
+        <table class="w-full text-left table-auto">
+            <thead>
                 <tr>
-                    <td>{security.symbol}</td>
-                    <td>{security.name}</td>
-                    <td>{security.sector}</td>
-                    <td>{security.price ?? "NA"}</td>
-                    <td>{security.analysis?.lower ?? "NA"}</td>
-                    <td>{security.analysis?.upper ?? "NA"}</td>
+                    <th class="p-4 border-b border-gray-300 bg-gray-200">Symbol</th>
+                    <th class="p-4 border-b border-gray-300 bg-gray-200">Name</th>
+                    <th class="p-4 border-b border-gray-300 bg-gray-200">Sector</th>
+                    <th class="p-4 border-b border-gray-300 bg-gray-200">Price</th>
+                    <th class="p-4 border-b border-gray-300 bg-gray-200">Estimated Lower Bound</th>
+                    <th class="p-4 border-b border-gray-300 bg-gray-200">Estimated Upper Bound</th>
                 </tr>
-            {/each}
-        </tbody>
-    </table>
+            </thead>
+            <tbody>
+                {#if data.securities.length === 0}
+                    <tr>
+                        <td colspan="6" class="text-center p-8 bg-gray-50">No securities found.</td>
+                    </tr>
+                {:else}
+                    {#each data.securities as security}
+                        <tr>
+                            <td class="p-4 border-b border-gray-300 bg-gray-50">{security.symbol}</td>
+                            <td class="p-4 border-b border-gray-300 bg-gray-50">{security.name}</td>
+                            <td class="p-4 border-b border-gray-300 bg-gray-50">{security.sector}</td>
+                            <td class="p-4 border-b border-gray-300 bg-gray-50">{security.price.price ?? "NA"}</td>
+                            <td class="p-4 border-b border-gray-300 bg-gray-50">{security.analysis?.lower ?? "NA"}</td>
+                            <td class="p-4 border-b border-gray-300 bg-gray-50">{security.analysis?.upper ?? "NA"}</td>
+                        </tr>
+                    {/each}
+                {/if}
+            </tbody>
+        </table>
+    </div>
 </div>
