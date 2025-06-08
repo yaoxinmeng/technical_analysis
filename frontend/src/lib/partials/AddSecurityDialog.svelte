@@ -82,14 +82,14 @@
                 <button
                 use:melt={$close}
                 class="inline-flex items-center justify-center rounded-full
-                            bg-zinc-100 px-4 py-2 font-medium cursor-pointer disabled:cursor-default"
+                            bg-zinc-100 px-4 py-2 font-medium cursor-pointer disabled:cursor-not-allowed"
                 disabled={inProgress}
                 >
                 Cancel
                 </button>
                 <button
                 class="inline-flex items-center justify-center rounded-full
-                            bg-blue-200 px-4 py-2 font-medium cursor-pointer disabled:cursor-default disabled:bg-gray-300"
+                            bg-blue-200 px-4 py-2 font-medium cursor-pointer disabled:cursor-not-allowed disabled:bg-gray-300"
                 disabled={inProgress}
                 onclick={() => handleSave(securityId)}
                 >

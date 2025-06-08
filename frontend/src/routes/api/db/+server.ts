@@ -36,7 +36,11 @@ export const POST: RequestHandler = async ({ request }) => {
                 target: 0,
                 nominal_upper: 0,
                 nominal_lower: 0,
-                nominal_target: 0
+                nominal_target: 0,
+                assumptions: {
+                    growth_rate: 0,
+                    years: 12
+                }
             }
         };
         await securities.insertOne(newSecurity).catch((err) => {

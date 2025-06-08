@@ -12,7 +12,7 @@ export type Security = {
         date: string
         balance_sheet: {
             date: string
-            assests: number
+            assets: number
             liabilities: number
             book_value: number
         }[]
@@ -32,6 +32,10 @@ export type Security = {
         target: number
         nominal_upper: number
         nominal_lower: number
-        nominal_target: number
+        nominal_target: number,
+        assumptions: {
+            growth_rate: number
+            years: number
+        }
     }
 }

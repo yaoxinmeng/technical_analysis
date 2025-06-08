@@ -35,7 +35,7 @@
                     id: securityId,
                     name: result.name,
                     sector: result.sector,
-                    exchange_currency: result.currency
+                    currency: result.exchange_currency
                  })
             });
             if (!res.ok) {
