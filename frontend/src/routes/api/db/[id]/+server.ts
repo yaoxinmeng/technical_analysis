@@ -25,3 +25,18 @@ export const PUT: RequestHandler = async ({ request, params }) => {
         error(500, err);
     }
 };
+
+export const DELETE: RequestHandler = async ({ params }) => {
+    const symbol = params.id;
+    try {
+        await securities.findOneAndDelete({
+            symbol: symbol
+        }).catch((err) => {
+            error(500, err);
+        }); 
+        return new Response("Ok");
+    }
+    catch (err: any) {
+        error(500, err);
+    }
+}

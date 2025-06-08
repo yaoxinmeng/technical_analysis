@@ -8,6 +8,6 @@ export function start_mongo() {
 	return client.connect();
 }
 
-export default client.db()
+export default client.db("finance");
 
-export const securities = client.db().collection('securities');
+export const securities = client.db("finance").collection('securities');

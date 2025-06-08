@@ -4,7 +4,12 @@ import { securities } from '$db/mongo';
 import type { Security } from '$db/schema';
 
 export const POST: RequestHandler = async ({ request }) => {
-    const body = await request.json();
+    const body: {
+        id: string;
+        name: string;
+        sector: string;
+        currency: string;
+    } = await request.json();
     try {
         let newSecurity: Security = {
             symbol: body.id,
@@ -16,7 +21,7 @@ export const POST: RequestHandler = async ({ request }) => {
                 date: ""
             },
             financials: {
-                currency: body.currency,
+                currency: "",
                 date: "",
                 balance_sheet: [],
                 income_statement: []

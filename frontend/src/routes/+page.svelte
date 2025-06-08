@@ -1,65 +1,116 @@
 <script lang="ts">
     import type { PageProps } from "./$types";
     import AddSecurityDialog from "$lib/partials/AddSecurityDialog.svelte";
+    import SecuritiesTable from "$lib/partials/SecuritiesTable.svelte";
+    import { invalidateAll } from "$app/navigation";
+    import type { Security } from "$db/schema";
 
     let { data }: PageProps = $props();
     console.log("Page data:", data);
     
     let inProgress = $state(false);
     let openDialog = $state(false);
+    let hasFailed = $state(false);
 
     async function handleAdd(securityId: string) {
-        openDialog = true;
         if (!securityId) return;
+        openDialog = true;
         inProgress = true;
         console.log("Add security:", securityId);
         try {
-            let result = await fetch(`/api/backend/${securityId}?info=overview`).then(res => res.json());
+            // fetch results from the backend API
+            let res = await fetch(`/api/backend/${securityId}?info=overview`);
+            if (!res.ok) {
+                throw new Error(`Failed to fetch security data: ${res.statusText}`);
+            }
+            let result = await res.json();
             console.log(result);
+            // save the security to the watchlist
+            res = await fetch(`/api/db`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({ 
+                    id: securityId,
+                    name: result.name,
+                    sector: result.sector,
+                    exchange_currency: result.currency
+                 })
+            });
+            if (!res.ok) {
+                throw new Error(`Failed to save security: ${res.statusText}`);
+            }
+            openDialog = false;
+            inProgress = false;
+            // refresh the page to show the new security
+            await invalidateAll();
+        } catch(err: any) {
+            console.error(err);
+            hasFailed = true;
+            inProgress = false;
+        }
+    }
 
+    async function handleDelete(securityId: string) {
+        if (!securityId) return;
+        console.log("Delete security:", securityId);
+        try {
+            // delete the security from the watchlist
+            let res = await fetch(`/api/db/${securityId}`, {
+                method: "DELETE"
+            });
+            if (!res.ok) {
+                throw new Error(`Failed to delete security: ${res.statusText}`);
+            }
+            // refresh the page to show the updated watchlist
+            await invalidateAll();
         } catch(err: any) {
             console.error(err);
         }
-        openDialog = false;
-        inProgress = false;
+    }
+
+    async function handleFetchPrice(securityId: string) {
+        if (!securityId) return;
+        console.log("Fetch price for security:", securityId);
+        try {
+            // fetch the latest price for the security
+            let res = await fetch(`/api/backend/${securityId}?info=price`);
+            if (!res.ok) {
+                throw new Error(`Failed to fetch price data: ${res.statusText}`);
+            }
+            let result = await res.json();
+            console.log(result);
+            // get current security
+            let security = data.securities.find((s: Security) => s.symbol === securityId);
+            if (!security) {
+                throw new Error(`Security with ID ${securityId} not found`);
+            }
+            security.price.price = result;
+            security.price.date = new Date().toISOString().split('T')[0]; // format date as YYYY-MM-DD
+            // update the security's price in the database
+            res = await fetch(`/api/db/${securityId}`, {
+                method: "PUT",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify(security)
+            });
+            if (!res.ok) {
+                throw new Error(`Failed to update price: ${res.statusText}`);
+            }
+            // refresh the page to show the updated price
+            await invalidateAll();
+        } catch(err: any) {
+            console.error(err);
+        }
     }
 </script>
 
 <div class="h-screen w-full px-16 py-8">
     <h1 class="text-3xl font-semibold">Watchlist</h1>
     <div class="flex justify-end">
-        <AddSecurityDialog handleSave={handleAdd} hasFailed={false} inProgress={inProgress} isOpen={openDialog}/>
+        <AddSecurityDialog handleSave={handleAdd} {hasFailed} {inProgress} isOpen={openDialog}/>
     </div>
-    <div class="relative flex rounded-xl bg-clip-border mt-8">
-        <table class="w-full text-left table-auto">
-            <thead>
-                <tr>
-                    <th class="p-4 border-b border-gray-300 bg-gray-200">Symbol</th>
-                    <th class="p-4 border-b border-gray-300 bg-gray-200">Name</th>
-                    <th class="p-4 border-b border-gray-300 bg-gray-200">Sector</th>
-                    <th class="p-4 border-b border-gray-300 bg-gray-200">Price</th>
-                    <th class="p-4 border-b border-gray-300 bg-gray-200">Estimated Lower Bound</th>
-                    <th class="p-4 border-b border-gray-300 bg-gray-200">Estimated Upper Bound</th>
-                </tr>
-            </thead>
-            <tbody>
-                {#if data.securities.length === 0}
-                    <tr>
-                        <td colspan="6" class="text-center p-8 bg-gray-50">No securities found.</td>
-                    </tr>
-                {:else}
-                    {#each data.securities as security}
-                        <tr>
-                            <td class="p-4 border-b border-gray-300 bg-gray-50">{security.symbol}</td>
-                            <td class="p-4 border-b border-gray-300 bg-gray-50">{security.name}</td>
-                            <td class="p-4 border-b border-gray-300 bg-gray-50">{security.sector}</td>
-                            <td class="p-4 border-b border-gray-300 bg-gray-50">{security.price.price ?? "NA"}</td>
-                            <td class="p-4 border-b border-gray-300 bg-gray-50">{security.analysis?.lower ?? "NA"}</td>
-                            <td class="p-4 border-b border-gray-300 bg-gray-50">{security.analysis?.upper ?? "NA"}</td>
-                        </tr>
-                    {/each}
-                {/if}
-            </tbody>
-        </table>
-    </div>
+    <SecuritiesTable handleDelete={handleDelete} handleFetchPrice={handleFetchPrice} securities={data.securities}/>
 </div>

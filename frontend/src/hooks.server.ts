@@ -16,7 +16,7 @@ export const handle: Handle = async ({ event, resolve }) => {
 	}
 
 	// get cookies from browser
-  const session = event.cookies.get('session');
+  	const session = event.cookies.get('session');
 	if (!session || !verifyToken(session)) {
 		// If no session cookie or invalid session cookie, redirect to login
 		return redirect(302, "/login")

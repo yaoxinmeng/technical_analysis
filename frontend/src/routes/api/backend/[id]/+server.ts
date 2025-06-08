@@ -16,6 +16,7 @@ export const GET: RequestHandler = async ({ url, params }) => {
                 break;
             case 'price':
                 result = await getSecurityPrice(params.id);
+                break;
             default:
                 throw new Error('Invalid info param');
         }

@@ -73,6 +73,11 @@
                     bind:value={securityId}
                 />
             </div>
+            <div class="my-4">
+                {#if hasFailed}
+                    <p class="text-red-500">Failed to add security.</p>
+                {/if}
+            </div>
             <div class="mt-6 flex justify-end gap-4">
                 <button
                 use:melt={$close}
