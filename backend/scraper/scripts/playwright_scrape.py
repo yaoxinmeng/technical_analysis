@@ -1,4 +1,4 @@
-from playwright.sync_api import sync_playwright
+from playwright.sync_api import sync_playwright, TimeoutError
 import argparse
 import sys
 import os
@@ -15,8 +15,12 @@ def playwright_scrape(url: str) -> str:
         page = context.new_page()
         try:
             page.goto(url, timeout=PLAYWRIGHT_TIMEOUT)
-            content = page.content()
+            content = page.content() 
+        except TimeoutError:
+            # Ignore timeout errors and continue to the next step
+            content = page.content() 
         except Exception as e:
+            # throw error for all other exceptions
             print(f"Error retrieving page content: {e}", file=sys.stderr)
             browser.close()
             sys.exit(1) # Exit if there's an error
