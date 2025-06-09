@@ -25,7 +25,7 @@ export function verifyToken(token: string): boolean {
         }
         return decoded.username === ROOT_USERNAME && decoded.password === ROOT_PASSWORD && decoded.timestamp > Date.now() - 3_600_000; // Token is valid for 1 hour
     } catch (error) {
-        console.error('Token verification failed:', error);
+        console.error('Token verification failed');
         return false;
     }
 }

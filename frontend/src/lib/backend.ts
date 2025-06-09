@@ -15,3 +15,20 @@ export async function getSecurityPrice(id: string): Promise<number> {
     }
     return res.json();
 }
+
+export async function getSecurityFinancials(id: string) {
+    const res = await fetch(`${BACKEND_URL}/finance/financials/${id}`);
+    if (!res.ok) {
+        throw new Error(`Failed to fetch security financials: ${res.statusText}`);
+    }
+    return await res.json();
+}
+
+
+export async function getExchangeRate(curr1: string, curr2: string) {
+    const res = await fetch(`${BACKEND_URL}/exchange/${curr1}/${curr2}`);
+    if (!res.ok) {
+        throw new Error(`Failed to fetch exchange rate: ${res.statusText}`);
+    }
+    return await res.json();
+}

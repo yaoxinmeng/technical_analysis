@@ -1,6 +1,6 @@
 import type { RequestHandler } from './$types';
 import { error } from '@sveltejs/kit';
-import { getSecurityOverview, getSecurityPrice } from '$lib/backend';
+import { getSecurityOverview, getSecurityPrice, getSecurityFinancials } from '$lib/backend';
 
 export const GET: RequestHandler = async ({ url, params }) => {
     const info = url.searchParams.get('info');
@@ -16,6 +16,9 @@ export const GET: RequestHandler = async ({ url, params }) => {
                 break;
             case 'price':
                 result = await getSecurityPrice(params.id);
+                break;
+            case 'financials':
+                result = await getSecurityFinancials(params.id);
                 break;
             default:
                 throw new Error('Invalid info param');

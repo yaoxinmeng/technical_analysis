@@ -23,14 +23,14 @@ export const POST: RequestHandler = async ({ request }) => {
             financials: {
                 currency: "",
                 date: "",
-                balance_sheet: [],
-                income_statement: []
+                financials: []
             },
             analysis: {
                 average_income: 0,
                 pe_ratio: 0,
                 de_ratio: 0,
-                book_value_per_share: 0,
+                cagr: 0,
+                bvps: 0,
                 upper: 0,
                 lower: 0,
                 target: 0,
