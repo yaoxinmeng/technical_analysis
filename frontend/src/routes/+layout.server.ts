@@ -1,6 +1,7 @@
 import type { LayoutServerLoad } from './$types';
 import { securities } from '$db/mongo';
 import type { Security } from '$db/schema';
+import { getExchangeRate } from '$lib/backend';
 
 export const load: LayoutServerLoad = async () => {
 	let cursor = securities.find();
@@ -17,7 +18,27 @@ export const load: LayoutServerLoad = async () => {
 			assumptions: doc.assumptions
 		} as Security;
 	});
+
+	// for each document, determine if an exchange rate is required
+	let exchanges = parsed.filter(
+		(doc) => doc.financials.currency && doc.exchange_currency !== doc.financials.currency
+	).map(
+		(doc) => [doc.financials.currency, doc.exchange_currency]
+	);
+
+	// retrieve relevant exchange rates
+	let rates: { [key: string]: number } = {};
+	for (let exchange of exchanges) {
+		try {
+			let rate = await getExchangeRate(exchange[0], exchange[1]);
+			rates[`${exchange[0]}-${exchange[1]}`] = rate;
+		} catch (err) {
+			console.error(err);
+			rates[`${exchange[0]}-${exchange[1]}`] = 0;
+		}
+	}
 	return {
-		securities: parsed
+		securities: parsed,
+		rates: rates
 	};
 };

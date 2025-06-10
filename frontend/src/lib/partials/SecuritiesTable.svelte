@@ -6,9 +6,10 @@
         handleDelete: (id: string) => Promise<void>;
         handleFetchPrice: (id: string) => Promise<void>;
         securities: Security[];
+        rates: { [key: string]: number };
     }
 
-    let { handleDelete, handleFetchPrice, securities }: Props = $props();
+    let { handleDelete, handleFetchPrice, securities, rates }: Props = $props();
     let fetchProgress = $state(securities.map((s) => false));
 
     async function handleFetch(symbol: string, idx: number) {
@@ -85,9 +86,22 @@
                         </td>
                         <td class="p-4 border-b border-gray-300 bg-gray-50">
                             <p>
-                                {security.financials.date.length === 0
-                                    ? "NA"
-                                    : `${security.analysis.lower.toFixed(2)} ${security.financials.currency}`}
+                                {#if security.financials.date.length === 0}
+                                    NA
+                                {:else}
+                                    {`${security.analysis.lower.toFixed(2)} ${security.financials.currency}`}
+                                    {#if security.financials.currency !== security.exchange_currency}
+                                        <span class="mx-1">
+                                            ({(
+                                                security.analysis.lower *
+                                                rates[
+                                                    `${security.financials.currency}-${security.exchange_currency}`
+                                                ]
+                                            ).toFixed(2)}
+                                            {security.exchange_currency})
+                                        </span>
+                                    {/if}
+                                {/if}
                             </p>
                             <p class="text-xs text-gray-500">
                                 Last Updated: {security.financials.date
@@ -98,9 +112,22 @@
                         </td>
                         <td class="p-4 border-b border-gray-300 bg-gray-50">
                             <p>
-                                {security.financials.date.length === 0
-                                    ? "NA"
-                                    : `${security.analysis.upper.toFixed(2)} ${security.financials.currency}`}
+                                {#if security.financials.date.length === 0}
+                                    NA
+                                {:else}
+                                    {`${security.analysis.upper.toFixed(2)} ${security.financials.currency}`}
+                                    {#if security.financials.currency !== security.exchange_currency}
+                                        <span class="mx-1">
+                                            ({(
+                                                security.analysis.upper *
+                                                rates[
+                                                    `${security.financials.currency}-${security.exchange_currency}`
+                                                ]
+                                            ).toFixed(2)}
+                                            {security.exchange_currency})
+                                        </span>
+                                    {/if}
+                                {/if}
                             </p>
                             <p class="text-xs text-gray-500">
                                 Last Updated: {security.financials.date

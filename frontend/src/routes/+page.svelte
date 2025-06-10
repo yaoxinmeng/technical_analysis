@@ -132,5 +132,6 @@
         {handleDelete}
         {handleFetchPrice}
         securities={data.securities}
+        rates={data.rates}
     />
 </div>
