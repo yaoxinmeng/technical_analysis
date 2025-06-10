@@ -1,9 +1,11 @@
 from loguru import logger
 import requests
+import subprocess
+import bs4
 
-ROOT_EXCHANGE_URL = "https://www.xe.com/api"
+ROOT_EXCHANGE_URL = "https://www.x-rates.com/calculator"
 
-def get_exchange_rate(curr1: str, curr2: str) -> float:
+def get_exchange_rate(curr1: str, curr2: str) -> float | None:
     """
     Get the exchange rate between two currencies.
 
@@ -11,14 +13,22 @@ def get_exchange_rate(curr1: str, curr2: str) -> float:
     :param str curr2: The second currency code.
     :return float: The exchange rate from curr1 to curr2.
     """
-    url = f"{ROOT_EXCHANGE_URL}/protected/statistics/?from={curr1}&to={curr2}"
-    response = requests.get(url, timeout=10)
-    if response.status_code != 200:
-        logger.error(f"Failed to fetch exchange rate from {curr1} to {curr2}. Status code: {response.status_code}")
-        return None
-    data = response.json()
-    if "last1Days" not in data or "average" not in data["last1Days"]:
-        logger.error(f"Invalid response format for exchange rate from {curr1} to {curr2}.")
-        return None
+    try:
+        content = subprocess.check_output(["scripts/playwright_exec.sh", f"{ROOT_EXCHANGE_URL}/?from={curr1}&to={curr2}&amount=1"], stderr=subprocess.STDOUT)
+    except subprocess.CalledProcessError as exc:
+        raise Exception(f"{exc.returncode}: {exc.output}")
+    soup = bs4.BeautifulSoup(content, "html.parser")
     
-    return data["last1Days"]["average"]
+    # look for span containing amount
+    span_elements = soup.find_all("span")
+    span_element = [el for el in span_elements if f"1.00 {curr1}" in el.get_text(strip=True)]
+    if not span_element:
+        logger.error(f"No span found for {curr1} to {curr2}.")
+        return None
+    span_element = span_element[0]
+    
+    # get exchange rate
+    data = span_element.find_next_siblings()[0].find_all(text=True, recursive=False)[0]
+    logger.debug(data)
+    
+    return float(data)
