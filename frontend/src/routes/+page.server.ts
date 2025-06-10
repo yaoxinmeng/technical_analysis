@@ -1,7 +1,7 @@
 import type { PageServerLoad } from './$types';
 import { securities } from '$db/mongo';
 import type { Security } from '$db/schema';
-import { getExchangeRate } from '$lib/backend';
+import { getExchangeRate } from '$lib/backend.server';
 
 export const load: PageServerLoad = async () => {
 	let cursor = securities.find();

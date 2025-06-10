@@ -1,12 +1,14 @@
-import type { Security, Analysis, Financial, Assumptions } from "$db/schema";
+import type { Analysis, Financial, Assumptions } from "$db/schema";
+
+const INTEREST_RATE = 0.02;
 
 export function generateAnalysis(financials: Financial[], assumptions: Assumptions): Analysis {
     const incomes = financials.map((f) => f.income_statement.income);
     const latestBalance = financials[0].balance_sheet;
     const latestShares = financials[0].income_statement.shares;
-    console.log(latestBalance);
 
-    let averageIncome = calculateAverage(incomes);
+    // calculate inflation-adjusted average income using up to 10 years of historic data
+    let averageIncome = calculateInflationAdjustedAverage(incomes.slice(0, Math.min(incomes.length, 10)));
     let nominalTarget = averageIncome * assumptions.years / latestShares;
     let target = calculateGpSum(averageIncome, 1 + assumptions.growth_rate, assumptions.years) / latestShares;
     return {
@@ -28,9 +30,12 @@ export function generateAnalysis(financials: Financial[], assumptions: Assumptio
  * @param {number[]} incomes - an array of numbers
  * @returns {number} the average of the array
  */
-function calculateAverage(incomes: number[]) {
+function calculateInflationAdjustedAverage(incomes: number[]) {
     if (incomes.length === 0) return 0;
-    const sum = incomes.reduce((a, b) => a + b, 0);
+    let sum = 0;
+    for (let i = 0; i < incomes.length; i++) {
+        sum += incomes[i] * (1 + INTEREST_RATE) ** i;
+    }
     return sum / incomes.length;
 }
 

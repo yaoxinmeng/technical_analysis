@@ -1,10 +1,10 @@
 import { fail, redirect } from '@sveltejs/kit';
 import type { Actions } from './$types';
-import { generateToken } from "$lib/auth";
+import { generateToken } from "$lib/auth.server";
 
 export const actions = {
-	default: async ({ cookies, request }) => {
-		const data = await request.formData();
+    default: async ({ cookies, request }) => {
+        const data = await request.formData();
         const username = data.get('username');
         const password = data.get('password');
 
@@ -29,5 +29,5 @@ export const actions = {
 
         // redirect the user
         redirect(302, '/');
-	}
+    }
 } satisfies Actions;

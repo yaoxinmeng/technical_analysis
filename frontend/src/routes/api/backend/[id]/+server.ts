@@ -1,6 +1,6 @@
 import type { RequestHandler } from './$types';
 import { error } from '@sveltejs/kit';
-import { getSecurityOverview, getSecurityPrice, getSecurityFinancials } from '$lib/backend';
+import { getSecurityOverview, getSecurityPrice, getSecurityFinancials } from '$lib/backend.server';
 
 export const GET: RequestHandler = async ({ url, params }) => {
     const info = url.searchParams.get('info');
