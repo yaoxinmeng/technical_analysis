@@ -1,8 +1,8 @@
-import type { LayoutServerLoad } from './$types';
+import type { PageServerLoad } from './$types';
 import { securities } from '$db/mongo';
 import type { Security } from '$db/schema';
 
-export const load: LayoutServerLoad = async ({ params }) => {
+export const load: PageServerLoad = async ({ params }) => {
     let doc = await securities.findOne({
         symbol: params.id
     });
