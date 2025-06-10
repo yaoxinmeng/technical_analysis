@@ -1,3 +1,4 @@
+import type { Security } from '$db/schema';
 import { BACKEND_URL } from '$env/static/private';
 
 export async function getSecurityOverview(id: string) {

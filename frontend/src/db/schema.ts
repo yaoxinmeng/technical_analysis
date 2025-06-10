@@ -10,34 +10,40 @@ export type Security = {
     financials: {
         currency: string
         date: string
-        financials: {
-            date: string
-            balance_sheet: {
-                assets: number
-                liabilities: number
-                book_value: number
-            },
-            income_statement: {
-                income: number
-                shares: number
-            }
-        }[]
+        financials: Financial[]
     }
-    analysis: {
-        average_income: number
-        pe_ratio: number
-        de_ratio: number
-        bvps: number
-        cagr: number
-        upper: number
-        lower: number
-        target: number
-        nominal_upper: number
-        nominal_lower: number
-        nominal_target: number
-        assumptions: {
-            growth_rate: number
-            years: number
-        }
+    analysis: Analysis
+    assumptions: Assumptions
+}
+
+export type Financial = {
+    date: string
+    balance_sheet: {
+        assets: number
+        liabilities: number
+        book_value: number
+    },
+    income_statement: {
+        income: number
+        shares: number
     }
+}
+
+export type Analysis = {
+    average_income: number
+    de_ratio: number
+    bvps: number
+    cagr: number
+    upper: number
+    lower: number
+    target: number
+    nominal_upper: number
+    nominal_lower: number
+    nominal_target: number
+}
+
+export type Assumptions = {
+    growth_rate: number
+    years: number
+    safety_margin: number
 }

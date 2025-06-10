@@ -87,7 +87,7 @@
                             <p>
                                 {security.financials.date.length === 0
                                     ? "NA"
-                                    : `${security.analysis.lower} ${security.financials.currency}`}
+                                    : `${security.analysis.lower.toFixed(2)} ${security.financials.currency}`}
                             </p>
                             <p class="text-xs text-gray-500">
                                 Last Updated: {security.financials.date
@@ -100,7 +100,7 @@
                             <p>
                                 {security.financials.date.length === 0
                                     ? "NA"
-                                    : `${security.analysis.upper} ${security.financials.currency}`}
+                                    : `${security.analysis.upper.toFixed(2)} ${security.financials.currency}`}
                             </p>
                             <p class="text-xs text-gray-500">
                                 Last Updated: {security.financials.date

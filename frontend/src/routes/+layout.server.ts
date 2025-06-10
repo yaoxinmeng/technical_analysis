@@ -3,8 +3,8 @@ import { securities } from '$db/mongo';
 import type { Security } from '$db/schema';
 
 export const load: LayoutServerLoad = async () => {
-    let cursor = securities.find();
-    let documents = await cursor.toArray();
+	let cursor = securities.find();
+	let documents = await cursor.toArray();
 	let parsed = documents.map((doc) => {
 		return {
 			symbol: doc.symbol,
@@ -13,7 +13,8 @@ export const load: LayoutServerLoad = async () => {
 			exchange_currency: doc.exchange_currency,
 			price: doc.price,
 			financials: doc.financials,
-			analysis: doc.analysis
+			analysis: doc.analysis,
+			assumptions: doc.assumptions
 		} as Security;
 	});
 	return {

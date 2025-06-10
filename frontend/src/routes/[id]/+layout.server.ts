@@ -16,7 +16,8 @@ export const load: LayoutServerLoad = async ({ params }) => {
         exchange_currency: doc.exchange_currency,
         price: doc.price,
         financials: doc.financials,
-        analysis: doc.analysis
+        analysis: doc.analysis,
+        assumptions: doc.assumptions
     } as Security
     return {
         security: parsed

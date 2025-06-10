@@ -27,7 +27,6 @@ export const POST: RequestHandler = async ({ request }) => {
             },
             analysis: {
                 average_income: 0,
-                pe_ratio: 0,
                 de_ratio: 0,
                 cagr: 0,
                 bvps: 0,
@@ -37,10 +36,11 @@ export const POST: RequestHandler = async ({ request }) => {
                 nominal_upper: 0,
                 nominal_lower: 0,
                 nominal_target: 0,
-                assumptions: {
-                    growth_rate: 0,
-                    years: 12
-                }
+            },
+            assumptions: {
+                growth_rate: 0,
+                years: 12,
+                safety_margin: 0.3
             }
         };
         await securities.insertOne(newSecurity).catch((err) => {

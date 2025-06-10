@@ -7,13 +7,18 @@
 
     let { data }: PageProps = $props();
     console.log("Page data:", data);
-    
+
     let inProgress = $state(false);
     let openDialog = $state(false);
     let hasFailed = $state(false);
 
     async function handleAdd(securityId: string) {
-        if (!securityId) return;
+        if (!securityId) {
+            throw new Error("Security ID is required");
+        }
+        if (data.securities.map((s) => s.symbol).includes(securityId)) {
+            throw new Error("Security already exists");
+        }
         openDialog = true;
         inProgress = true;
         console.log("Add security:", securityId);
@@ -21,7 +26,9 @@
             // fetch results from the backend API
             let res = await fetch(`/api/backend/${securityId}?info=overview`);
             if (!res.ok) {
-                throw new Error(`Failed to fetch security data: ${res.statusText}`);
+                throw new Error(
+                    `Failed to fetch security data: ${res.statusText}`,
+                );
             }
             let result = await res.json();
             console.log(result);
@@ -29,14 +36,14 @@
             res = await fetch(`/api/db`, {
                 method: "POST",
                 headers: {
-                    "Content-Type": "application/json"
+                    "Content-Type": "application/json",
                 },
-                body: JSON.stringify({ 
+                body: JSON.stringify({
                     id: securityId,
                     name: result.name,
                     sector: result.sector,
-                    currency: result.exchange_currency
-                 })
+                    currency: result.exchange_currency,
+                }),
             });
             if (!res.ok) {
                 throw new Error(`Failed to save security: ${res.statusText}`);
@@ -45,7 +52,7 @@
             inProgress = false;
             // refresh the page to show the new security
             await invalidateAll();
-        } catch(err: any) {
+        } catch (err: any) {
             console.error(err);
             hasFailed = true;
             inProgress = false;
@@ -58,14 +65,14 @@
         try {
             // delete the security from the watchlist
             let res = await fetch(`/api/db/${securityId}`, {
-                method: "DELETE"
+                method: "DELETE",
             });
             if (!res.ok) {
                 throw new Error(`Failed to delete security: ${res.statusText}`);
             }
             // refresh the page to show the updated watchlist
             await invalidateAll();
-        } catch(err: any) {
+        } catch (err: any) {
             console.error(err);
         }
     }
@@ -77,31 +84,35 @@
             // fetch the latest price for the security
             let res = await fetch(`/api/backend/${securityId}?info=price`);
             if (!res.ok) {
-                throw new Error(`Failed to fetch price data: ${res.statusText}`);
+                throw new Error(
+                    `Failed to fetch price data: ${res.statusText}`,
+                );
             }
             let result = await res.json();
             console.log(result);
             // get current security
-            let security = data.securities.find((s: Security) => s.symbol === securityId);
+            let security = data.securities.find(
+                (s: Security) => s.symbol === securityId,
+            );
             if (!security) {
                 throw new Error(`Security with ID ${securityId} not found`);
             }
             security.price.price = result;
-            security.price.date = new Date().toISOString().split('T')[0]; // format date as YYYY-MM-DD
+            security.price.date = new Date().toISOString().split("T")[0]; // format date as YYYY-MM-DD
             // update the security's price in the database
             res = await fetch(`/api/db/${securityId}`, {
                 method: "PUT",
                 headers: {
-                    "Content-Type": "application/json"
+                    "Content-Type": "application/json",
                 },
-                body: JSON.stringify(security)
+                body: JSON.stringify(security),
             });
             if (!res.ok) {
                 throw new Error(`Failed to update price: ${res.statusText}`);
             }
             // refresh the page to show the updated price
             await invalidateAll();
-        } catch(err: any) {
+        } catch (err: any) {
             console.error(err);
         }
     }
@@ -110,7 +121,16 @@
 <div class="h-screen w-full px-16 py-8">
     <h1 class="text-3xl font-semibold">Watchlist</h1>
     <div class="flex justify-end">
-        <AddSecurityDialog handleSave={handleAdd} {hasFailed} {inProgress} isOpen={openDialog}/>
+        <AddSecurityDialog
+            handleSave={handleAdd}
+            {hasFailed}
+            {inProgress}
+            isOpen={openDialog}
+        />
     </div>
-    <SecuritiesTable handleDelete={handleDelete} handleFetchPrice={handleFetchPrice} securities={data.securities}/>
+    <SecuritiesTable
+        {handleDelete}
+        {handleFetchPrice}
+        securities={data.securities}
+    />
 </div>
