@@ -21,7 +21,7 @@ services:
     build: ./backend/scraper
     environment:
       - ENV=debug
-      - PLAYWRIGHT_TIMEOUT=10000
+      - PLAYWRIGHT_TIMEOUT=5000
     ports:
       - "8000:8000"
 
