@@ -27,18 +27,22 @@ export const load: PageServerLoad = async () => {
 	);
 
 	// retrieve relevant exchange rates
-	let rates: { [key: string]: number } = {};
-	for (let exchange of exchanges) {
-		try {
-			let rate = await getExchangeRate(exchange[0], exchange[1]);
-			rates[`${exchange[0]}-${exchange[1]}`] = rate;
-		} catch (err) {
-			console.error(err);
-			rates[`${exchange[0]}-${exchange[1]}`] = 0;
-		}
-	}
+	let ratesPromise: Promise<{ [key: string]: number }> = new Promise((resolve, reject) => {
+		let rates: { [key: string]: number } = {};
+		exchanges.forEach((exchange) => {
+			getExchangeRate(exchange[0], exchange[1])
+				.then((rate) => {
+					rates[`${exchange[0]}-${exchange[1]}`] = rate;
+				})
+				.catch((err) => {
+					console.error(err);
+					rates[`${exchange[0]}-${exchange[1]}`] = 0;
+				});
+		});
+		resolve(rates);
+	})
 	return {
 		securities: parsed,
-		rates: rates
+		rates: ratesPromise
 	};
 };

@@ -6,7 +6,6 @@
     import { generateAnalysis } from "$lib/calculations";
 
     let { data }: PageProps = $props();
-    console.log("Page data:", data);
     let security = $state(data.security);
     let inProgress = $state(false);
     let changes = $derived(

@@ -2,11 +2,11 @@
     import type { PageProps } from "./$types";
     import AddSecurityDialog from "$lib/partials/AddSecurityDialog.svelte";
     import SecuritiesTable from "$lib/partials/SecuritiesTable.svelte";
+    import LoadingOverlay from "$lib/components/LoadingOverlay.svelte";
     import { invalidateAll } from "$app/navigation";
     import type { Security } from "$db/schema";
 
     let { data }: PageProps = $props();
-    console.log("Page data:", data);
 
     let inProgress = $state(false);
     let openDialog = $state(false);
@@ -105,9 +105,7 @@
         console.log("Fetch price for security:", securityId);
         try {
             // get current security
-            let security = data.securities.find(
-                (s) => s.symbol === securityId,
-            );
+            let security = data.securities.find((s) => s.symbol === securityId);
             if (!security) {
                 throw new Error(`Security with ID ${securityId} not found`);
             }
@@ -134,27 +132,31 @@
     }
 </script>
 
-<div class="h-screen w-full px-16 py-8">
-    <h1 class="text-3xl font-semibold">Watchlist</h1>
-    <div class="flex justify-end gap-4">
-        <button
-            class="bg-blue-200 rounded-full px-4 py-2 cursor-pointer"
-            onclick={handleFetchAll}
-        >
-            Fetch All
-        </button>
-        <AddSecurityDialog
-            handleSave={handleAdd}
-            {hasFailed}
+{#await data.rates}
+    <LoadingOverlay />
+{:then rates}
+    <div class="h-screen w-full px-16 py-8">
+        <h1 class="text-3xl font-semibold">Watchlist</h1>
+        <div class="flex justify-end gap-4">
+            <button
+                class="bg-blue-200 rounded-full px-4 py-2 cursor-pointer"
+                onclick={handleFetchAll}
+            >
+                Fetch All
+            </button>
+            <AddSecurityDialog
+                handleSave={handleAdd}
+                {hasFailed}
+                {inProgress}
+                isOpen={openDialog}
+            />
+        </div>
+        <SecuritiesTable
+            {handleDelete}
+            {handleFetchPrice}
+            securities={data.securities}
+            {rates}
             {inProgress}
-            isOpen={openDialog}
         />
     </div>
-    <SecuritiesTable
-        {handleDelete}
-        {handleFetchPrice}
-        securities={data.securities}
-        rates={data.rates}
-        {inProgress}
-    />
-</div>
+{/await}
