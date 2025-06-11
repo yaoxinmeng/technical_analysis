@@ -1,6 +1,6 @@
 import type { Analysis, Financial, Assumptions } from "$db/schema";
 
-const INTEREST_RATE = 0.02;
+const INTEREST_RATE = 0.0328;
 
 export function generateAnalysis(financials: Financial[], assumptions: Assumptions): Analysis {
     const incomes = financials.map((f) => f.income_statement.income);

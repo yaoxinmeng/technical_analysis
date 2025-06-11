@@ -8,4 +8,4 @@ RUN npm run build
 
 EXPOSE 3000
 
-CMD node build
+CMD node -r dotenv/config build

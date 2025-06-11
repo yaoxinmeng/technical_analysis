@@ -1,7 +1,7 @@
 import {MongoClient} from 'mongodb';
-import { MONGO_HOST, MONGO_PORT, MONGO_USERNAME, MONGO_PASSWORD } from '$env/static/private'; 
+import { env } from '$env/dynamic/private'; 
 
-const client = new MongoClient(`mongodb://${MONGO_USERNAME}:${MONGO_PASSWORD}@${MONGO_HOST}:${MONGO_PORT}`)
+const client = new MongoClient(`mongodb://${env.MONGO_USERNAME}:${env.MONGO_PASSWORD}@${env.MONGO_HOST}:${env.MONGO_PORT}`)
 
 export function start_mongo() {
 	console.log('Starting mongo...');

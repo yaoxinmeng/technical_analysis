@@ -11,6 +11,7 @@ services:
       - ROOT_USERNAME
       - ROOT_PASSWORD
       - BACKEND_URL=http://scraper:8000
+      - ORIGIN=http://localhost:3000
     ports:
       - "3000:3000"
     depends_on:

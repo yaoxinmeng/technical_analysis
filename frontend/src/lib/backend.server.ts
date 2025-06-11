@@ -1,8 +1,8 @@
 import type { Security } from '$db/schema';
-import { BACKEND_URL } from '$env/static/private';
+import { env } from '$env/dynamic/private';
 
 export async function getSecurityOverview(id: string) {
-    const res = await fetch(`${BACKEND_URL}/finance/overview/${id}`);
+    const res = await fetch(`${env.BACKEND_URL}/finance/overview/${id}`);
     if (!res.ok) {
         throw new Error(`Failed to fetch security overview: ${res.statusText}`);
     }
@@ -10,7 +10,7 @@ export async function getSecurityOverview(id: string) {
 }
 
 export async function getSecurityPrice(id: string): Promise<number> {
-    const res = await fetch(`${BACKEND_URL}/finance/price/${id}`);
+    const res = await fetch(`${env.BACKEND_URL}/finance/price/${id}`);
     if (!res.ok) {
         throw new Error(`Failed to fetch security price: ${res.statusText}`);
     }
@@ -18,7 +18,7 @@ export async function getSecurityPrice(id: string): Promise<number> {
 }
 
 export async function getSecurityFinancials(id: string) {
-    const res = await fetch(`${BACKEND_URL}/finance/financials/${id}`);
+    const res = await fetch(`${env.BACKEND_URL}/finance/financials/${id}`);
     if (!res.ok) {
         throw new Error(`Failed to fetch security financials: ${res.statusText}`);
     }
@@ -27,7 +27,7 @@ export async function getSecurityFinancials(id: string) {
 
 
 export async function getExchangeRate(curr1: string, curr2: string) {
-    const res = await fetch(`${BACKEND_URL}/exchange/${curr1}/${curr2}`);
+    const res = await fetch(`${env.BACKEND_URL}/exchange/${curr1}/${curr2}`);
     if (!res.ok) {
         throw new Error(`Failed to fetch exchange rate: ${res.statusText}`);
     }
