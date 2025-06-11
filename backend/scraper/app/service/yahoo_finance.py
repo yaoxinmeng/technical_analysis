@@ -27,8 +27,11 @@ def scrape_main(id: str) -> dict[str, str]:
             logger.warning(f"Multiple name elements found for {id}. Using the first one.")
             logger.debug(f"Found elements: {name_elements}")
         name = name_elements[0].get_text(strip=True)
-        name = re.sub(r"\s*\(.*?\)\s*", "", name)  # remove any text in parentheses
-        results["name"] = name
+        # remove the symbol in paranthesis
+        # we use lazy matching on the reversed string since the symbol always appear last
+        # for example, "APPLE INC (AAPL)" => ")AAPL( CNI ELPPA"
+        name = re.sub(r"^\).+?\(", "", name[::-1])[::-1]
+        results["name"] = name.strip()
 
     # scrape sector information
     elements = soup.find_all(string="Sector")
