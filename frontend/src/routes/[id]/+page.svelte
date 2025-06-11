@@ -27,7 +27,12 @@
             return;
         }
         const result = await res.json();
-        console.log(result);
+        console.debug(result);
+        if (result.balance_sheet === undefined || result.financial_statement === undefined) {
+            console.error(`Failed to fetch financials`);
+            inProgress = false;
+            return;
+        }
         // parse updated financials
         let newFinancials: Financial[] = [];
         for (let key in result.balance_sheet) {
@@ -69,6 +74,7 @@
                 currency: result.financial_statement.financials_currency,
                 financials: newFinancials,
             },
+            analysis: generateAnalysis(newFinancials, security.assumptions),
         };
         inProgress = false;
     }
@@ -89,9 +95,7 @@
         await invalidateAll();
     }
 
-    $inspect(security);
     $effect(() => {
-        // update analysis
         security.analysis = generateAnalysis(financials, assumptions);
     });
 </script>
