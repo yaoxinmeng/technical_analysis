@@ -12,6 +12,8 @@
     let changes = $derived(
         JSON.stringify(security) !== JSON.stringify(data.security),
     );
+    let financials = $derived(security.financials.financials);
+    let assumptions = $derived(security.assumptions);
 
     async function fetchFinancials() {
         inProgress = true;
@@ -91,11 +93,13 @@
     $inspect(security);
     $effect(() => {
         // update analysis
-        security.analysis = generateAnalysis(
-            security.financials.financials,
-            security.assumptions,
-        );
+        security.analysis = generateAnalysis(financials, assumptions);
     });
 </script>
 
-<SecurityPage bind:security={security} canSave={changes} {fetchFinancials} {saveSecurity} />
+<SecurityPage
+    bind:security
+    canSave={changes}
+    {fetchFinancials}
+    {saveSecurity}
+/>

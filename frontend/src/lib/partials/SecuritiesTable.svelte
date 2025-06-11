@@ -6,10 +6,17 @@
         handleDelete: (id: string) => Promise<void>;
         handleFetchPrice: (id: string) => Promise<void>;
         securities: Security[];
+        inProgress: boolean;
         rates: { [key: string]: number };
     }
 
-    let { handleDelete, handleFetchPrice, securities, rates }: Props = $props();
+    let {
+        handleDelete,
+        handleFetchPrice,
+        securities,
+        inProgress,
+        rates,
+    }: Props = $props();
     let fetchProgress = $state(securities.map((s) => false));
 
     async function handleFetch(symbol: string, idx: number) {
@@ -17,6 +24,10 @@
         await handleFetchPrice(symbol);
         fetchProgress[idx] = false;
     }
+
+    $effect(() => {
+        fetchProgress = securities.map((s) => inProgress);
+    });
 </script>
 
 <div class="relative flex rounded-xl bg-clip-border mt-8">

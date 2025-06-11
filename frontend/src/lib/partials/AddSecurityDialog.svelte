@@ -40,10 +40,14 @@
 </script>
 
 <button
-    class="bg-blue-200 rounded-full px-4 py-2 cursor-pointer"
+    class="inline-flex items-center bg-blue-200 rounded-full px-4 py-2 cursor-pointer disabled:cursor-not-allowed disabled:bg-gray-300"
+    disabled={inProgress}
     use:melt={$trigger}
 >
     Add New +
+    {#if inProgress}
+        <Loading />
+    {/if}
 </button>
 
 {#if $open}

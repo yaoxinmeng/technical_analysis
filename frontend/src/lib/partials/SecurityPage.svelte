@@ -9,7 +9,12 @@
         saveSecurity: () => Promise<void>;
     }
 
-    let { security = $bindable(), canSave, fetchFinancials, saveSecurity }: Props = $props();
+    let {
+        security = $bindable(),
+        canSave,
+        fetchFinancials,
+        saveSecurity,
+    }: Props = $props();
     let inProgress = $state(false);
     let growthPercent = $state(security.assumptions.growth_rate * 100);
     let safetyMarginPercent = $state(security.assumptions.safety_margin * 100);
@@ -86,7 +91,7 @@
                             <p
                                 class="bg-green-200 py-2 px-4 rounded-full text-base"
                             >
-                                {security.analysis.average_income}
+                                {Math.round(security.analysis.average_income)}
                             </p>
                         </div>
                         <div class="flex flex-col gap-1 min-w-20">
