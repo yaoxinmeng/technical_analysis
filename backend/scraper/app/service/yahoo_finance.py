@@ -134,7 +134,10 @@ def scrape_financial_statement(id: str) -> dict[str, dict[str, int]]:
         headers = headers[1:] 
 
         # get relevant data rows
-        income_row = soup.find("div", string="Diluted NI available to com stockholders").find_parent().find_next_siblings()
+        income_div = soup.find("div", string="Diluted NI available to com stockholders")
+        if not income_div:
+            income_div = soup.find("div", string="Net income common stockholders")  # fallback for some companies
+        income_row = income_div.find_parent().find_next_siblings()
         if len(income_row) < 2:
             logger.error(f"Not enough data rows found in financials page for {id}.")
             return {}
@@ -148,13 +151,19 @@ def scrape_financial_statement(id: str) -> dict[str, dict[str, int]]:
             income_value = income.get_text(strip=True).replace(",", "")
             shares_value = shares.get_text(strip=True).replace(",", "")
             try:
-                results[h] = {
-                    "income": int(float(income_value) * 1000) if income_value else None,
-                    "shares": int(float(shares_value) * 1000) if shares_value else None
-                }
+                income = int(float(income_value) * 1000) if income_value else 0
             except ValueError as e:
-                logger.error(f"Error converting financial data to float for {h} in {id}: {e}")
-                continue 
+                logger.error(f"Error converting income value to float for {h} in {id}: {e}")
+                income = 0
+            try:
+                shares = int(float(shares_value) * 1000) if shares_value else 0
+            except ValueError as e:
+                logger.error(f"Error converting shares value to float for {h} in {id}: {e}")
+                shares = 0
+            results[h] = {
+                "income": income,
+                "shares": shares
+            }
         return results   
 
     def parse_currency(soup: bs4.BeautifulSoup) -> str:
@@ -212,9 +221,9 @@ def scrape_balance(id: str) -> dict[str, dict[str, int]]:
         book_value_value = book_value.get_text(strip=True).replace(",", "")
         try:
             results[h] = {
-                "assets": int(float(assets_value) * 1000) if assets_value else None,
-                "liabilities": int(float(liabilities_value) * 1000) if liabilities_value else None,
-                "book_value": int(float(book_value_value) * 1000) if book_value_value else None
+                "assets": int(float(assets_value) * 1000) if assets_value else 0,
+                "liabilities": int(float(liabilities_value) * 1000) if liabilities_value else 0,
+                "book_value": int(float(book_value_value) * 1000) if book_value_value else 0
             }
         except ValueError as e:
             logger.error(f"Error converting balance sheet data to float for {h} in {id}: {e}")

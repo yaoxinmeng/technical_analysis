@@ -47,3 +47,10 @@ export type Assumptions = {
     years: number
     safety_margin: number
 }
+
+export type ExchangeRate = {
+    from: string
+    to: string
+    rate: number
+    date: string
+}

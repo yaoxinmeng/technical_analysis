@@ -1,6 +1,6 @@
 import type { PageServerLoad } from './$types';
-import { securities } from '$db/mongo';
-import type { Security } from '$db/schema';
+import { securities, exchangeRates } from '$db/mongo';
+import type { Security, ExchangeRate } from '$db/schema';
 import { getExchangeRate } from '$lib/backend.server';
 
 export const load: PageServerLoad = async () => {
@@ -26,21 +26,44 @@ export const load: PageServerLoad = async () => {
 		(doc) => [doc.financials.currency, doc.exchange_currency]
 	);
 
-	// retrieve relevant exchange rates
-	let ratesPromise: Promise<{ [key: string]: number }> = new Promise(async (resolve, reject) => {
-		let rates: { [key: string]: number } = {};
-		for (let exchange of exchanges) {
-			try {
-				rates[`${exchange[0]}-${exchange[1]}`] = await getExchangeRate(exchange[0], exchange[1])
-			} catch (err) {
-				console.error(err);
-				rates[`${exchange[0]}-${exchange[1]}`] = 0;
-			}
+	// retrieve relevant exchange rates from db
+	let exchangeRateCursor = exchangeRates.find();
+	let exchangeRateDocuments = await exchangeRateCursor.toArray();
+	let exchangeRatesParsed = exchangeRateDocuments.map((doc) => {
+		return {
+			from: doc.from,
+			to: doc.to,
+			rate: doc.rate,
+			date: doc.date
+		} as ExchangeRate;
+	});
+
+	// if exchange rate is not in db, fetch it from the API
+	let rates: { [key: string]: number } = {};
+	for (let exchange of exchanges) {
+		// check if exchange rate is already in db
+		let existingRate = exchangeRatesParsed.find(
+			(rate) => rate.from === exchange[0] && rate.to === exchange[1]
+		);
+		if (existingRate) {
+			rates[`${exchange[0]}-${exchange[1]}`] = existingRate.rate;
+			continue;
 		}
-		resolve(rates);
-	})
+		try {
+			rates[`${exchange[0]}-${exchange[1]}`] = await getExchangeRate(exchange[0], exchange[1]);
+			exchangeRates.insertOne({
+				from: exchange[0],
+				to: exchange[1],
+				rate: rates[`${exchange[0]}-${exchange[1]}`],
+				date: new Date().toISOString().split("T")[0]
+			});
+		} catch (err) {
+			console.error(err);
+			rates[`${exchange[0]}-${exchange[1]}`] = 0;
+		}
+	}
 	return {
 		securities: parsed,
-		rates: ratesPromise
+		rates: rates
 	};
 };

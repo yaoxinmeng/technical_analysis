@@ -1,4 +1,3 @@
-import type { Security } from '$db/schema';
 import { env } from '$env/dynamic/private';
 
 export async function getSecurityOverview(id: string) {
@@ -26,7 +25,7 @@ export async function getSecurityFinancials(id: string) {
 }
 
 
-export async function getExchangeRate(curr1: string, curr2: string) {
+export async function getExchangeRate(curr1: string, curr2: string): Promise<number> {
     const res = await fetch(`${env.BACKEND_URL}/exchange/${curr1}/${curr2}`);
     if (!res.ok) {
         throw new Error(`Failed to fetch exchange rate: ${res.statusText}`);

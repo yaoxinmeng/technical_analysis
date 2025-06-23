@@ -2,17 +2,12 @@
     import type { PageProps } from "./$types";
     import { invalidateAll } from "$app/navigation";
     import SecurityPage from "$lib/partials/SecurityPage.svelte";
-    import type { Financial } from "$db/schema";
+    import type { Financial, Security } from "$db/schema";
     import { generateAnalysis } from "$lib/calculations";
 
     let { data }: PageProps = $props();
     let security = $state(data.security);
     let inProgress = $state(false);
-    let changes = $derived(
-        JSON.stringify(security) !== JSON.stringify(data.security),
-    );
-    let financials = $derived(security.financials.financials);
-    let assumptions = $derived(security.assumptions);
 
     async function fetchFinancials() {
         inProgress = true;
@@ -23,15 +18,17 @@
         );
         if (!res.ok) {
             console.error(`Failed to fetch financials: ${res.statusText}`);
-            inProgress = false;
-            return;
+            throw new Error(
+                `Failed to fetch financials: ${res.statusText}`,
+            );
         }
         const result = await res.json();
         console.debug(result);
         if (result.balance_sheet === undefined || result.financial_statement === undefined) {
             console.error(`Failed to fetch financials`);
-            inProgress = false;
-            return;
+            throw new Error(
+                `Failed to fetch financials due to missing data`,
+            );
         }
         // parse updated financials
         let newFinancials: Financial[] = [];
@@ -66,8 +63,9 @@
                 new Date(b.date).getSeconds() - new Date(a.date).getSeconds()
             );
         });
-        // update security
-        security = {
+
+        // return updated security
+        return {
             ...security,
             financials: {
                 date: new Date().toISOString().split("T")[0], // format date as YYYY-MM-DD
@@ -76,10 +74,9 @@
             },
             analysis: generateAnalysis(newFinancials, security.assumptions),
         };
-        inProgress = false;
     }
 
-    async function saveSecurity() {
+    async function saveSecurity(security: Security) {
         // update the security's price in the database
         const res = await fetch(`/api/db/${security.symbol}`, {
             method: "PUT",
@@ -94,15 +91,11 @@
         // refresh the page to show the updated price
         await invalidateAll();
     }
-
-    $effect(() => {
-        security.analysis = generateAnalysis(financials, assumptions);
-    });
 </script>
 
 <SecurityPage
-    bind:security
-    canSave={changes}
+    initialSecurity={data.security}
     {fetchFinancials}
     {saveSecurity}
+    {generateAnalysis}
 />

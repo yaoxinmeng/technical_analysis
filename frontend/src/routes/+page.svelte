@@ -130,19 +130,59 @@
         // refresh the page to show the updated price
         await invalidateAll();
     }
+
+    async function handleFetchRates() {
+        inProgress = true;
+        for (const rate in data.rates) {
+            let curr1 = rate.split("-")[0];
+            let curr2 = rate.split("-")[1];
+            try {
+                // fetch exchange rates for the currency pair
+                let res = await fetch(`/api/backend/rates?curr1=${curr1}&curr2=${curr2}`);
+                if (!res.ok) {
+                    throw new Error(`Failed to fetch exchange rates: ${res.statusText}`);
+                }
+                let rates = await res.json();
+                // update the rates in the database
+                res = await fetch(`/api/db/rates`, {
+                    method: "PUT",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({
+                        from: curr1,
+                        to: curr2,
+                        date: new Date().toISOString().split("T")[0], // format date as YYYY-MM-DD
+                        rate: rates,
+                    }),
+                });
+            } catch (err: any) {
+                console.error(err);
+            }
+        }
+        inProgress = false;
+        // refresh the page to show the updated price
+        await invalidateAll();
+    }
 </script>
 
-{#await data.rates}
+{#if inProgress}
     <LoadingOverlay />
-{:then rates}
+{:else}
     <div class="h-screen w-full px-16 py-8">
         <h1 class="text-3xl font-semibold">Watchlist</h1>
-        {#each Object.keys(rates) as rate}
+        {#each Object.keys(data.rates) as rate}
             <p class="text-gray-500 mb-2">
-                {rate}: {rates[rate]}
+                {rate}: {data.rates[rate]}
             </p>
         {/each}
         <div class="flex justify-end gap-4">
+            <button
+                class="bg-blue-200 rounded-full px-4 py-2 cursor-pointer"
+                onclick={handleFetchRates}
+            >
+                Update Exchange Rates
+            </button>
             <button
                 class="bg-blue-200 rounded-full px-4 py-2 cursor-pointer"
                 onclick={handleFetchAll}
@@ -160,10 +200,8 @@
             {handleDelete}
             {handleFetchPrice}
             securities={data.securities}
-            {rates}
+            rates={data.rates}
             {inProgress}
         />
     </div>
-{:catch error}
-	<p>error loading comments: {error.message}</p>
-{/await}
+{/if}

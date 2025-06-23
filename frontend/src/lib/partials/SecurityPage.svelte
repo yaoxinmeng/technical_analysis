@@ -1,33 +1,57 @@
 <script lang="ts">
     import Loading from "$lib/components/Loading.svelte";
-    import type { Security } from "$db/schema";
+    import type { Security, Financial, Assumptions, Analysis } from "$db/schema";
 
     interface Props {
-        security: Security;
-        canSave: boolean;
-        fetchFinancials: () => Promise<void>;
-        saveSecurity: () => Promise<void>;
+        initialSecurity: Security;
+        fetchFinancials: () => Promise<Security>;
+        saveSecurity: (security: Security) => Promise<void>;
+        generateAnalysis: (financials: Financial[], assumptions: Assumptions) => Analysis;
     }
 
     let {
-        security = $bindable(),
-        canSave,
+        initialSecurity,
         fetchFinancials,
         saveSecurity,
+        generateAnalysis
     }: Props = $props();
+    
+    let security = $state(initialSecurity);
     let inProgress = $state(false);
     let growthPercent = $state(security.assumptions.growth_rate * 100);
     let safetyMarginPercent = $state(security.assumptions.safety_margin * 100);
 
+    let canSave = $derived(
+        JSON.stringify(security) !== JSON.stringify(initialSecurity),
+    );
+
     async function handleFetch() {
         inProgress = true;
-        await fetchFinancials();
+        try {
+            security = await fetchFinancials();
+        } catch (error) {
+            console.error("Error fetching financials:", error);
+        }
         inProgress = false;
+    }
+
+    function parseNumber(value: string | undefined): number {
+        if (value === undefined || value.trim() === "") {
+            return 0;
+        }
+        return Number.parseFloat(value.replace(/,/g, ""));
     }
 
     $effect(() => {
         security.assumptions.growth_rate = growthPercent / 100;
+    });
+    
+    $effect(() => {
         security.assumptions.safety_margin = safetyMarginPercent / 100;
+    });
+
+    $effect(() => {
+        security.analysis = generateAnalysis(security.financials.financials, security.assumptions);
     });
 </script>
 
@@ -40,7 +64,7 @@
         <button
             class="flex bg-blue-200 px-4 py-2 rounded-full cursor-pointer disabled:cursor-not-allowed disabled:bg-gray-300"
             disabled={!canSave}
-            onclick={saveSecurity}
+            onclick={() => saveSecurity(security)}
         >
             Save
         </button>
@@ -205,9 +229,10 @@
                         >
                         <th
                             colspan="3"
-                            class="p-4 border-b text-center border-gray-300 bg-gray-200"
+                            class="p-4 border-b border-r text-center border-gray-300 bg-gray-200"
                             >Balance Sheet</th
                         >
+                        <th rowspan="2" class="p-4 border-b border-r border-gray-300 bg-gray-200">Actions</th>
                     </tr>
                     <tr>
                         <th class="p-4 border-b border-gray-300 bg-gray-200"
@@ -223,7 +248,7 @@
                         <th class="p-4 border-b border-gray-300 bg-gray-200"
                             >Liabilities</th
                         >
-                        <th class="p-4 border-b border-gray-300 bg-gray-200"
+                        <th class="p-4 border-b border-r border-gray-300 bg-gray-200"
                             >Book Value</th
                         >
                     </tr>
@@ -231,42 +256,86 @@
                 <tbody>
                     {#if security.financials.financials.length === 0}
                         <tr>
-                            <td colspan="6" class="text-center p-8 bg-gray-50"
+                            <td colspan="7" class="text-center p-8 bg-gray-50"
                                 >No financial record found.</td
                             >
                         </tr>
                     {:else}
                         {#each security.financials.financials as financial, idx}
                             <tr>
-                                <td
-                                    class="p-4 border-b border-gray-300 bg-gray-50"
-                                    >{financial.date}</td
-                                >
-                                <td
-                                    class="p-4 border-b border-gray-300 bg-gray-50"
-                                    >{financial.income_statement.income.toLocaleString()}</td
-                                >
-                                <td
-                                    class="p-4 border-b border-gray-300 bg-gray-50"
-                                    >{financial.income_statement.shares.toLocaleString()}</td
-                                >
-                                <td
-                                    class="p-4 border-b border-gray-300 bg-gray-50"
-                                    >{financial.balance_sheet.assets.toLocaleString()}</td
-                                >
-                                <td
-                                    class="p-4 border-b border-gray-300 bg-gray-50"
-                                    >{financial.balance_sheet.liabilities.toLocaleString()}</td
-                                >
-                                <td
-                                    class="p-4 border-b border-gray-300 bg-gray-50"
-                                    >{financial.balance_sheet.book_value.toLocaleString()}</td
-                                >
+                                <td class="p-4 border-b border-r border-gray-300 bg-gray-50">
+                                    <input 
+                                        type="text" 
+                                        class="p-1 rounded-lg"
+                                        value={financial.date} 
+                                        onchange={(e) => {
+                                            financial.date = (<HTMLInputElement>e.target).value;
+                                        }}
+                                    />
+                                </td>
+                                <td class="p-4 border-b border-gray-300 bg-gray-50">
+                                    <input 
+                                        type="text" 
+                                        class="p-1 rounded-lg"
+                                        value={financial.income_statement.income.toLocaleString()} 
+                                        onchange={(e) => {
+                                            financial.income_statement.income = parseNumber((<HTMLInputElement>e.target).value)
+                                            security.analysis = generateAnalysis(security.financials.financials, security.assumptions)
+                                        }}
+                                    />
+                                </td>
+                                <td class="p-4 border-b border-r border-gray-300 bg-gray-50">
+                                    <input 
+                                        type="text" 
+                                        value={financial.income_statement.shares.toLocaleString()} 
+                                        onchange={(e) => {
+                                            financial.income_statement.shares = parseNumber((<HTMLInputElement>e.target).value)
+                                            security.analysis = generateAnalysis(security.financials.financials, security.assumptions)
+                                        }}
+                                    />
+                                </td>
+                                <td class="p-4 border-b border-gray-300 bg-gray-50">
+                                    {financial.balance_sheet.assets.toLocaleString()}
+                                </td>
+                                <td class="p-4 border-b border-gray-300 bg-gray-50">
+                                    {financial.balance_sheet.liabilities.toLocaleString()}
+                                </td>
+                                <td class="p-4 border-b border-r border-gray-300 bg-gray-50">
+                                    {financial.balance_sheet.book_value.toLocaleString()}
+                                </td>
+                                <td class="p-4 border-b border-gray-300 bg-gray-50">
+                                    <button class="bg-red-400 px-4 py-2 rounded-full cursor-pointer" onclick={() => {
+                                        security.financials.financials=[
+                                            ...security.financials.financials.slice(0, idx),
+                                            ...security.financials.financials.slice(idx + 1)
+                                        ];}}>
+                                        Delete
+                                    </button>
+                                </td>
                             </tr>
                         {/each}
                     {/if}
                 </tbody>
             </table>
+            <div class="flex justify-end">
+                <button 
+                    class="flex bg-blue-200 px-4 py-2 rounded-full cursor-pointer disabled:bg-gray-300 disabled:cursor-not-allowed"
+                    onclick={() => {
+                        security.financials.financials.push({
+                            date: new Date().toLocaleDateString('en-UK'), // format date as DD/MM/YYYY
+                            income_statement: {
+                                income: 0,
+                                shares: 0
+                            },
+                            balance_sheet: {
+                                assets: 0,
+                                liabilities: 0,
+                                book_value: 0
+                            }
+                        });
+                    }}
+                >Add Row</button>
+            </div>
         </div>
     </div>
 </div>

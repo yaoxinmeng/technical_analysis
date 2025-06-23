@@ -11,3 +11,4 @@ export function start_mongo() {
 export default client.db("finance");
 
 export const securities = client.db("finance").collection('securities');
+export const exchangeRates = client.db("finance").collection('exchange_rates');
