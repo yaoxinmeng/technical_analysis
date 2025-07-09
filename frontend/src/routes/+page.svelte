@@ -168,40 +168,39 @@
 
 {#if inProgress}
     <LoadingOverlay />
-{:else}
-    <div class="h-screen w-full px-16 py-8">
-        <h1 class="text-3xl font-semibold">Watchlist</h1>
-        {#each Object.keys(data.rates) as rate}
-            <p class="text-gray-500 mb-2">
-                {rate}: {data.rates[rate]}
-            </p>
-        {/each}
-        <div class="flex justify-end gap-4">
-            <button
-                class="bg-blue-200 rounded-full px-4 py-2 cursor-pointer"
-                onclick={handleFetchRates}
-            >
-                Update Exchange Rates
-            </button>
-            <button
-                class="bg-blue-200 rounded-full px-4 py-2 cursor-pointer"
-                onclick={handleFetchAll}
-            >
-                Fetch All
-            </button>
-            <AddSecurityDialog
-                handleSave={handleAdd}
-                {hasFailed}
-                {inProgress}
-                isOpen={openDialog}
-            />
-        </div>
-        <SecuritiesTable
-            {handleDelete}
-            {handleFetchPrice}
-            securities={data.securities}
-            rates={data.rates}
+{/if}
+<div class="h-screen w-full px-16 py-8">
+    <h1 class="text-3xl font-semibold">Watchlist</h1>
+    {#each Object.keys(data.rates) as rate}
+        <p class="text-gray-500 mb-2">
+            {rate}: {data.rates[rate]}
+        </p>
+    {/each}
+    <div class="flex justify-end gap-4">
+        <button
+            class="bg-blue-200 rounded-full px-4 py-2 cursor-pointer"
+            onclick={handleFetchRates}
+        >
+            Update Exchange Rates
+        </button>
+        <button
+            class="bg-blue-200 rounded-full px-4 py-2 cursor-pointer"
+            onclick={handleFetchAll}
+        >
+            Fetch All
+        </button>
+        <AddSecurityDialog
+            handleSave={handleAdd}
+            {hasFailed}
             {inProgress}
+            isOpen={openDialog}
         />
     </div>
-{/if}
+    <SecuritiesTable
+        {handleDelete}
+        {handleFetchPrice}
+        securities={data.securities}
+        rates={data.rates}
+        {inProgress}
+    />
+</div>

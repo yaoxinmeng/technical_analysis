@@ -1,5 +1,18 @@
-<div class="fixed top-0 left-0 right-0 bottom-0 w-full h-screen z-50 overflow-hidden bg-gray-700 opacity-75 flex flex-col items-center justify-center">
-	<div class="loader ease-linear rounded-full border-4 border-t-4 border-gray-200 h-12 w-12 mb-4"></div>
-	<h2 class="text-center text-white text-xl font-semibold">Loading...</h2>
-	<p class="w-1/3 text-center text-white">This may take a few seconds, please don't close this page.</p>
+<script>
+	import { LottiePlayer } from '@lottiefiles/svelte-lottie-player';
+</script>
+
+
+<div class="fixed flex flex-col items-center z-100 h-screen w-full justify-center bg-black opacity-85">
+	<div class="z-101">
+		<LottiePlayer
+  src='https://lottie.host/ae9e299d-c639-41d5-8586-ef32865d5cd8/hZV7nExVIC.json'
+  autoplay={true}
+  loop={true}
+  controls={false}
+  renderer='svg'
+  background='transparent'
+  width={700}
+  controlsLayout={[]} />
+	</div>
 </div>

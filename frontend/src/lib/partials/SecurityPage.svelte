@@ -1,5 +1,5 @@
 <script lang="ts">
-    import Loading from "$lib/components/Loading.svelte";
+    import Loading from "$lib/components/LoadingIcon.svelte";
     import type { Security, Financial, Assumptions, Analysis } from "$db/schema";
 
     interface Props {
@@ -123,7 +123,11 @@
                             <p
                                 class="bg-green-200 py-2 px-4 rounded-full text-base"
                             >
+                            {#if security.analysis.de_ratio === null}
+                                NULL
+                            {:else}
                                 {(security.analysis.de_ratio * 100).toFixed(2)} %
+                            {/if}
                             </p>
                         </div>
                         <div class="flex flex-col gap-1 min-w-20">
@@ -131,7 +135,11 @@
                             <p
                                 class="bg-green-200 py-2 px-4 rounded-full text-base"
                             >
-                                {security.analysis.bvps.toFixed(2)}
+                                {#if security.analysis.bvps === null}
+                                    NULL
+                                {:else}
+                                    {security.analysis.bvps.toFixed(2)}
+                                {/if}
                             </p>
                         </div>
                         <div class="flex flex-col gap-1 min-w-20">
@@ -139,7 +147,11 @@
                             <p
                                 class="bg-green-200 py-2 px-4 rounded-full text-base"
                             >
-                                {(security.analysis.cagr * 100).toFixed(2)} %
+                                {#if security.analysis.cagr === null}
+                                    NULL
+                                {:else}
+                                    {(security.analysis.cagr * 100).toFixed(2)} %
+                                {/if}
                             </p>
                         </div>
                     </div>
@@ -150,7 +162,11 @@
                             <p
                                 class="bg-green-200 py-2 px-4 rounded-full text-base"
                             >
-                                {security.analysis.lower.toFixed(2)}
+                                {#if security.analysis.lower === null}
+                                    NULL
+                                {:else}
+                                    {security.analysis.lower.toFixed(2)}
+                                {/if}
                             </p>
                         </div>
                         <div class="flex flex-col gap-1 min-w-20">
@@ -158,7 +174,11 @@
                             <p
                                 class="bg-green-200 py-2 px-4 rounded-full text-base"
                             >
-                                {security.analysis.target.toFixed(2)}
+                                {#if security.analysis.target === null}
+                                    NULL
+                                {:else}
+                                    {security.analysis.target.toFixed(2)}
+                                {/if}
                             </p>
                         </div>
                         <div class="flex flex-col gap-1 min-w-20">
@@ -166,7 +186,11 @@
                             <p
                                 class="bg-green-200 py-2 px-4 rounded-full text-base"
                             >
-                                {security.analysis.upper.toFixed(2)}
+                                {#if security.analysis.upper === null}
+                                    NULL
+                                {:else}
+                                    {security.analysis.upper.toFixed(2)}
+                                {/if}
                             </p>
                         </div>
                     </div>
@@ -177,7 +201,11 @@
                             <p
                                 class="bg-green-200 py-2 px-4 rounded-full text-base"
                             >
-                                {security.analysis.nominal_lower.toFixed(2)}
+                                {#if security.analysis.nominal_lower === null}
+                                    NULL
+                                {:else}
+                                    {security.analysis.nominal_lower.toFixed(2)}
+                                {/if}
                             </p>
                         </div>
                         <div class="flex flex-col gap-1 min-w-20">
@@ -185,7 +213,11 @@
                             <p
                                 class="bg-green-200 py-2 px-4 rounded-full text-base"
                             >
-                                {security.analysis.nominal_target.toFixed(2)}
+                                {#if security.analysis.nominal_target === null}
+                                    NULL
+                                {:else}
+                                    {security.analysis.nominal_target.toFixed(2)}
+                                {/if}
                             </p>
                         </div>
                         <div class="flex flex-col gap-1 min-w-20">
@@ -193,7 +225,11 @@
                             <p
                                 class="bg-green-200 py-2 px-4 rounded-full text-base"
                             >
-                                {security.analysis.nominal_upper.toFixed(2)}
+                                {#if security.analysis.nominal_upper === null}
+                                    NULL
+                                {:else}
+                                    {security.analysis.nominal_upper.toFixed(2)}
+                                {/if}
                             </p>
                         </div>
                     </div>

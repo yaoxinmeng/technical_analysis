@@ -2,7 +2,7 @@
     import { writable } from "svelte/store";
     import { createDialog, melt } from "@melt-ui/svelte";
     import { fade, scale } from "svelte/transition";
-    import Loading from "$lib/components/Loading.svelte";
+    import Loading from "$lib/components/LoadingIcon.svelte";
 
     interface Props {
         handleSave: (id: string) => void;

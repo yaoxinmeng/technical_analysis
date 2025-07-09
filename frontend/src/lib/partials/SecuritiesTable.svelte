@@ -1,5 +1,5 @@
 <script lang="ts">
-    import Loading from "$lib/components/Loading.svelte";
+    import Loading from "$lib/components/LoadingIcon.svelte";
     import type { Security } from "$db/schema";
 
     interface Props {
@@ -30,7 +30,7 @@
     });
 </script>
 
-<div class="relative flex rounded-xl bg-clip-border mt-8">
+<div class="relative flex rounded-xl bg-clip-border py-8">
     <table class="w-full text-left table-auto">
         <thead>
             <tr>
@@ -100,17 +100,21 @@
                                 {#if security.financials.date.length === 0}
                                     NA
                                 {:else}
-                                    {`${security.analysis.lower.toFixed(2)} ${security.financials.currency}`}
-                                    {#if security.financials.currency !== security.exchange_currency}
-                                        <span class="mx-1">
-                                            ({(
-                                                security.analysis.lower *
-                                                rates[
-                                                    `${security.financials.currency}-${security.exchange_currency}`
-                                                ]
-                                            ).toFixed(2)}
-                                            {security.exchange_currency})
-                                        </span>
+                                    {#if security.analysis.lower === null}
+                                        NULL
+                                    {:else}
+                                        {`${security.analysis.lower.toFixed(2)} ${security.financials.currency}`}
+                                        {#if security.financials.currency !== security.exchange_currency}
+                                            <span class="mx-1">
+                                                ({(
+                                                    security.analysis.lower *
+                                                    rates[
+                                                        `${security.financials.currency}-${security.exchange_currency}`
+                                                    ]
+                                                ).toFixed(2)}
+                                                {security.exchange_currency})
+                                            </span>
+                                        {/if}
                                     {/if}
                                 {/if}
                             </p>
@@ -126,17 +130,21 @@
                                 {#if security.financials.date.length === 0}
                                     NA
                                 {:else}
-                                    {`${security.analysis.upper.toFixed(2)} ${security.financials.currency}`}
-                                    {#if security.financials.currency !== security.exchange_currency}
-                                        <span class="mx-1">
-                                            ({(
-                                                security.analysis.upper *
-                                                rates[
-                                                    `${security.financials.currency}-${security.exchange_currency}`
-                                                ]
-                                            ).toFixed(2)}
-                                            {security.exchange_currency})
-                                        </span>
+                                    {#if security.analysis.upper === null}
+                                        NULL
+                                    {:else}
+                                        {`${security.analysis.upper.toFixed(2)} ${security.financials.currency}`}
+                                        {#if security.financials.currency !== security.exchange_currency}
+                                            <span class="mx-1">
+                                                ({(
+                                                    security.analysis.upper *
+                                                    rates[
+                                                        `${security.financials.currency}-${security.exchange_currency}`
+                                                    ]
+                                                ).toFixed(2)}
+                                                {security.exchange_currency})
+                                            </span>
+                                        {/if}
                                     {/if}
                                 {/if}
                             </p>

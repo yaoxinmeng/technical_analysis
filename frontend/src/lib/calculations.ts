@@ -15,7 +15,7 @@ export function generateAnalysis(financials: Financial[], assumptions: Assumptio
         average_income: averageIncome,
         de_ratio: latestBalance.liabilities / latestBalance.assets,
         bvps: latestBalance.book_value / latestShares,
-        cagr: (incomes[0] / incomes[1]) ** (1 / (incomes.length - 1)) - 1,
+        cagr: (incomes[0] / incomes[incomes.length - 1]) ** (1 / (incomes.length - 1)) - 1,
         upper: target * (1 + assumptions.safety_margin),
         lower: target * (1 - assumptions.safety_margin),
         target: target,
