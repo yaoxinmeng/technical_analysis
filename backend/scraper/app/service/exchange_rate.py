@@ -13,7 +13,7 @@ def get_exchange_rate(curr1: str, curr2: str) -> float | None:
     :param str curr2: The second currency code.
     :return float: The exchange rate from curr1 to curr2.
     """
-    content = playwright_scrape(f"{ROOT_EXCHANGE_URL}/?from={curr1}&to={curr2}&amount=1", headless=True)
+    content = playwright_scrape(f"{ROOT_EXCHANGE_URL}/?from={curr1}&to={curr2}&amount=1", headless=True, timeout=5000)
     soup = bs4.BeautifulSoup(content, "html.parser")
     
     # look for span containing amount

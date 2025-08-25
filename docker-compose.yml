@@ -14,15 +14,12 @@ services:
       - ORIGIN=http://localhost:3000
     ports:
       - "3000:3000"
-    depends_on:
-      - scraper
-      - mongodb
 
   scraper:
     build: ./backend/scraper
     environment:
       - ENV=debug
-      - PLAYWRIGHT_TIMEOUT=5000
+      - PLAYWRIGHT_TIMEOUT=3000
     ports:
       - "8000:8000"
 

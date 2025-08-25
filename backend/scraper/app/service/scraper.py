@@ -2,7 +2,7 @@ from playwright.sync_api import sync_playwright, TimeoutError
 from loguru import logger
 from app.core.config import settings
 
-def playwright_scrape(url: str, headless: bool = False) -> str:
+def playwright_scrape(url: str, headless: bool = False, timeout: int = settings.PLAYWRIGHT_TIMEOUT) -> str:
     """
     Scrape the contents of a page using the Playwright Sync API.
     """
@@ -14,7 +14,7 @@ def playwright_scrape(url: str, headless: bool = False) -> str:
         context = browser.new_context(user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3")
         page = context.new_page()
         try:
-            page.goto(url, timeout=settings.PLAYWRIGHT_TIMEOUT)
+            page.goto(url, timeout=timeout)
             content = page.content() 
         except TimeoutError:
             # Ignore timeout errors and continue to the next step
