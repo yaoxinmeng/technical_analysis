@@ -23,4 +23,5 @@ COPY app /app/app
 # set python path
 ENV PYTHONPATH=/app
 
-CMD ["xvfb-run", "-a", "python", "app/main.py"]
+# CMD ["xvfb-run", "-a", "python", "app/main.py"]
+CMD ["python", "app/main.py"]
