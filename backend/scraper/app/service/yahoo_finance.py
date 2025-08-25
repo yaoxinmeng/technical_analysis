@@ -1,7 +1,8 @@
 import re
-import subprocess
 from loguru import logger
 import bs4
+
+from app.service.scraper import playwright_scrape
 
 ROOT_YAHOO_URL = "https://sg.finance.yahoo.com/quote"
 
@@ -10,10 +11,7 @@ def scrape_main(id: str) -> dict[str, str]:
     """
     Scrape the main page.
     """
-    try:
-        content = subprocess.check_output(["scripts/playwright_exec.sh", f"{ROOT_YAHOO_URL}/{id}"], stderr=subprocess.STDOUT)
-    except subprocess.CalledProcessError as exc:
-        raise Exception(f"{exc.returncode}: {exc.output}")
+    content = playwright_scrape(f"{ROOT_YAHOO_URL}/{id}", headless=True)
     soup = bs4.BeautifulSoup(content, "html.parser")
     results = {"sector": "", "exchange_currency": "", "name": ""}
 
@@ -63,10 +61,7 @@ def scrape_price(id: str) -> float:
     """
     Scrape the price page.
     """
-    try:
-        content = subprocess.check_output(["scripts/playwright_exec.sh", f"{ROOT_YAHOO_URL}/{id}/history"], stderr=subprocess.STDOUT)
-    except subprocess.CalledProcessError as exc:
-        raise Exception(f"{exc.returncode}: {exc.output}")
+    content = playwright_scrape(f"{ROOT_YAHOO_URL}/{id}/history", headless=True)
     soup = bs4.BeautifulSoup(content, "html.parser")
     tables = soup.find_all("table")
     if not tables:
@@ -115,10 +110,7 @@ def scrape_financial_statement(id: str) -> dict[str, dict[str, int]]:
     """
     Scrape the financial statement page.
     """
-    try:
-        content = subprocess.check_output(["scripts/playwright_exec.sh", f"{ROOT_YAHOO_URL}/{id}/financials"], stderr=subprocess.STDOUT)
-    except subprocess.CalledProcessError as exc:
-        raise Exception(f"{exc.returncode}: {exc.output}")
+    content = playwright_scrape(f"{ROOT_YAHOO_URL}/{id}/financials", headless=True)
     soup = bs4.BeautifulSoup(content, "html.parser")
 
     def parse_financials_table(soup: bs4.BeautifulSoup) -> dict[str, int]:
@@ -186,10 +178,7 @@ def scrape_balance(id: str) -> dict[str, dict[str, int]]:
     """
     Scrape the balance sheet page.
     """
-    try:
-        content = subprocess.check_output(["scripts/playwright_exec.sh", f"{ROOT_YAHOO_URL}/{id}/balance-sheet"], stderr=subprocess.STDOUT)
-    except subprocess.CalledProcessError as exc:
-        raise Exception(f"{exc.returncode}: {exc.output}")
+    content = playwright_scrape(f"{ROOT_YAHOO_URL}/{id}/balance-sheet", headless=True)
     soup = bs4.BeautifulSoup(content, "html.parser")
     
     header_div = soup.find("div", attrs={"class": "tableHeader"})

@@ -1,7 +1,7 @@
 from loguru import logger
-import requests
-import subprocess
 import bs4
+
+from app.service.scraper import playwright_scrape
 
 ROOT_EXCHANGE_URL = "https://www.x-rates.com/calculator"
 
@@ -13,10 +13,7 @@ def get_exchange_rate(curr1: str, curr2: str) -> float | None:
     :param str curr2: The second currency code.
     :return float: The exchange rate from curr1 to curr2.
     """
-    try:
-        content = subprocess.check_output(["scripts/playwright_exec.sh", f"{ROOT_EXCHANGE_URL}/?from={curr1}&to={curr2}&amount=1"], stderr=subprocess.STDOUT)
-    except subprocess.CalledProcessError as exc:
-        raise Exception(f"{exc.returncode}: {exc.output}")
+    content = playwright_scrape(f"{ROOT_EXCHANGE_URL}/?from={curr1}&to={curr2}&amount=1")
     soup = bs4.BeautifulSoup(content, "html.parser")
     
     # look for span containing amount
