@@ -18,8 +18,6 @@
     
     let security = $state(initialSecurity);
     let inProgress = $state(false);
-    let growthPercent = $state(security.assumptions.growth_rate * 100);
-    let safetyMarginPercent = $state(security.assumptions.safety_margin * 100);
 
     let canSave = $derived(
         JSON.stringify(security) !== JSON.stringify(initialSecurity),
@@ -41,14 +39,6 @@
         }
         return Number.parseFloat(value.replace(/,/g, ""));
     }
-
-    $effect(() => {
-        security.assumptions.growth_rate = growthPercent / 100;
-    });
-    
-    $effect(() => {
-        security.assumptions.safety_margin = safetyMarginPercent / 100;
-    });
 
     $effect(() => {
         security.analysis = generateAnalysis(security.financials.financials, security.assumptions);
@@ -79,7 +69,11 @@
                         id="growth"
                         type="number"
                         class="bg-white py-2 px-4 rounded-full"
-                        bind:value={growthPercent}
+                        value={security.assumptions.growth_rate * 100}
+                        onchange={(e) => {
+                            let growthPercent = parseNumber((<HTMLInputElement>e.target).value);
+                            security.assumptions.growth_rate = growthPercent / 100;
+                        }}
                     />
                 </div>
                 <div class="flex flex-col gap-1">
@@ -97,7 +91,11 @@
                         id="horizon"
                         type="number"
                         class="bg-white py-2 px-4 rounded-full"
-                        bind:value={safetyMarginPercent}
+                        value={security.assumptions.safety_margin * 100}
+                        onchange={(e) => {
+                            let safetyMarginPercent = parseNumber((<HTMLInputElement>e.target).value);
+                            security.assumptions.safety_margin = safetyMarginPercent / 100;
+                        }}
                     />
                 </div>
             </div>

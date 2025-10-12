@@ -3,7 +3,7 @@
     import { invalidateAll } from "$app/navigation";
     import SecurityPage from "$lib/partials/SecurityPage.svelte";
     import type { Financial, Security } from "$db/schema";
-    import { generateAnalysis } from "$lib/calculations";
+    import { generateAnalysis, updateExistingFinancials } from "$lib/calculations";
 
     let { data }: PageProps = $props();
     let security = $state(data.security);
@@ -32,18 +32,15 @@
         }
         // parse updated financials
         let newFinancials: Financial[] = [];
-        for (let key in result.balance_sheet) {
-            if (!result.financial_statement.financials.hasOwnProperty(key)) {
-                console.error("No financials for date:", key);
-                continue;
-            }
+        for (let key in result.financial_statement.financials) {
+            let balance_sheet = result.balance_sheet[key] ? result.balance_sheet[key] : {
+                assets: -1,
+                liabilities: -1,
+                book_value: -1,
+            };
             let item = {
                 date: key,
-                balance_sheet: {
-                    assets: result.balance_sheet[key].assets,
-                    liabilities: result.balance_sheet[key].liabilities,
-                    book_value: result.balance_sheet[key].book_value,
-                },
+                balance_sheet: balance_sheet,
                 income_statement: {
                     income: result.financial_statement.financials[key].income,
                     shares: result.financial_statement.financials[key].shares,
@@ -52,17 +49,10 @@
             console.debug(item);
             newFinancials.push(item);
         }
-        for (let financial of security.financials.financials) {
-            if (!newFinancials.map((f) => f.date).includes(financial.date)) {
-                newFinancials.push(financial);
-            }
-        }
-        // sort financials by date
-        newFinancials.sort((a, b) => {
-            return (
-                new Date(b.date).getSeconds() - new Date(a.date).getSeconds()
-            );
-        });
+        newFinancials = updateExistingFinancials(
+            security.financials.financials,
+            newFinancials,
+        );
 
         // return updated security
         return {
