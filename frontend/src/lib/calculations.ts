@@ -58,33 +58,35 @@ function calculateGpSum(a: number, r: number, n: number) {
  * @returns 
  */
 export function updateExistingFinancials(existing: Financial[], newFinancials: Financial[]): Financial[] {
-    for (let i = 0; i < newFinancials.length; i++) {
-        let index = existing.findIndex(
-            (f) => f.date === newFinancials[i].date,
+    let finalFinancials: Financial[] = JSON.parse(JSON.stringify(existing));
+    for (let financial of newFinancials) {
+        let index = finalFinancials.findIndex(
+            (f) => f.date === financial.date,
         );
         // if date is not present in existing, add it from new financials
-        if (index !== -1) {
-            existing.push(newFinancials[i]);
+        if (index === -1) {
+            finalFinancials.push(financial);
             continue;
         } 
         // the date is TTM, we replace the existing one
-        if (newFinancials[i].date === "TTM") {
-            existing[index] = newFinancials[i];
+        if (financial.date === "TTM") {
+            finalFinancials[index] = financial;
             continue;
         }
         // if any of the existing data has a value of 0, we replace it with new data
         if (
-            existing[index].income_statement.income === 0 || 
-            existing[index].income_statement.shares === 0 ||
-            existing[index].balance_sheet.assets === 0 ||
-            existing[index].balance_sheet.liabilities === 0 ||
-            existing[index].balance_sheet.book_value === 0 
+            finalFinancials[index].income_statement.income === 0 || 
+            finalFinancials[index].income_statement.shares === 0 ||
+            finalFinancials[index].balance_sheet.assets === 0 ||
+            finalFinancials[index].balance_sheet.liabilities === 0 ||
+            finalFinancials[index].balance_sheet.book_value === 0 
         ) {
-            existing[index] = newFinancials[i];
+            finalFinancials[index] = financial;
         }
     }
+    console.debug(finalFinancials);
     // sort financials by date
-    newFinancials.sort((a, b) => {
+    finalFinancials.sort((a, b) => {
         if (a.date === "TTM") return -1;
         if (b.date === "TTM") return 1;
         return (
@@ -93,9 +95,9 @@ export function updateExistingFinancials(existing: Financial[], newFinancials: F
     });
     // since balance sheet might not have TTM, we need to handle that case
     // we use the balance sheet data from the latest date available
-    if(newFinancials[0].balance_sheet.assets === -1) {
-        newFinancials[0].balance_sheet = newFinancials[1].balance_sheet;
+    if(finalFinancials[0].balance_sheet.assets === -1) {
+        finalFinancials[0].balance_sheet = finalFinancials[1].balance_sheet;
     }
 
-    return newFinancials;
+    return finalFinancials;
 }
