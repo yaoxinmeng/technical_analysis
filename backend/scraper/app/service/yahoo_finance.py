@@ -118,6 +118,9 @@ def scrape_financial_statement(id: str) -> dict[str, dict[str, int]]:
         Parse a financials table and return a dictionary of financial data.
         """
         header_div = soup.find("div", attrs={"class": "tableHeader"})
+        if not header_div:
+            logger.error(f"No header div found in financials page for {id}.")
+            return {}
         headers = [div.get_text(strip=True) for div in header_div.find("div").find_all("div")]
         if len(headers) < 2:
             logger.error(f"Not enough headers found in financials page for {id}.")
