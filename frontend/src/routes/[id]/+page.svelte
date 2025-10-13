@@ -3,7 +3,7 @@
     import { invalidateAll } from "$app/navigation";
     import SecurityPage from "$lib/partials/SecurityPage.svelte";
     import type { Financial, Security } from "$db/schema";
-    import { generateAnalysis, updateExistingFinancials } from "$lib/calculations";
+    import { generateAnalysis, updateExistingFinancials } from "$lib/utils/calculations";
 
     let { data }: PageProps = $props();
     let security = $state(data.security);

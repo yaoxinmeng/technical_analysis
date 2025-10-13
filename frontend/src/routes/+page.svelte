@@ -4,6 +4,7 @@
     import SecuritiesTable from "$lib/partials/SecuritiesTable.svelte";
     import LoadingOverlay from "$lib/components/LoadingOverlay.svelte";
     import ExchangeRatesDropdown from "$lib/partials/ExchangeRatesDropdown.svelte";
+    import { exportCsv } from "$lib/utils/csvUtils";
     import { invalidateAll } from "$app/navigation";
     import type { Security } from "$db/schema";
 
@@ -192,6 +193,12 @@
             {inProgress}
             isOpen={openDialog}
         />
+        <button
+            class="bg-orange-200 rounded-full px-4 py-2 cursor-pointer"
+            onclick={() => (exportCsv(data.securities))}
+        >
+            Export CSV
+        </button>
     </div>
     <SecuritiesTable
         {handleDelete}
