@@ -3,6 +3,7 @@
     import AddSecurityDialog from "$lib/partials/AddSecurityDialog.svelte";
     import SecuritiesTable from "$lib/partials/SecuritiesTable.svelte";
     import LoadingOverlay from "$lib/components/LoadingOverlay.svelte";
+    import ExchangeRatesDropdown from "$lib/partials/ExchangeRatesDropdown.svelte";
     import { invalidateAll } from "$app/navigation";
     import type { Security } from "$db/schema";
 
@@ -171,11 +172,7 @@
 {/if}
 <div class="h-screen w-full px-16 py-8">
     <h1 class="text-3xl font-semibold">Watchlist</h1>
-    {#each Object.keys(data.rates) as rate}
-        <p class="text-gray-500 mb-2">
-            {rate}: {data.rates[rate]}
-        </p>
-    {/each}
+    <ExchangeRatesDropdown rates={data.rates} />
     <div class="flex justify-end gap-4">
         <button
             class="bg-blue-200 rounded-full px-4 py-2 cursor-pointer"
