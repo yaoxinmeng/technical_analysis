@@ -17,79 +17,141 @@
         inProgress,
         rates,
     }: Props = $props();
-    let fetchProgress = $state(securities.map((s) => false));
 
-    async function handleFetch(symbol: string, idx: number) {
-        fetchProgress[idx] = true;
-        await handleFetchPrice(symbol);
-        fetchProgress[idx] = false;
+    let sortBy = $state({col: "id", ascending: true});
+
+    function convertPrice(price: number, from: string, to: string) {
+        if (from === to) {
+            return price;
+        }
+        const rateKey = `${from}-${to}`;
+        const rate = rates[rateKey];
+        if (!rate) {
+            throw new Error(`No exchange rate found for ${rateKey}`);
+        }
+        return price * rate;
     }
 
-    $effect(() => {
-        fetchProgress = securities.map((s) => inProgress);
-    });
+    // create array to store table data
+    let tableData = $state(
+        securities.map((s) => {
+            let convertedUpper = convertPrice(s.analysis.upper, s.financials.currency, s.exchange_currency);
+            let convertedLower = convertPrice(s.analysis.lower, s.financials.currency, s.exchange_currency);
+            let score = null;
+            if (s.analysis.upper > 0 && s.analysis.lower > 0 && s.price.price > 0) {
+                score = 1 - (s.price.price - convertedLower) / (convertedUpper - convertedLower);
+            }
+            return {
+                symbol: s.symbol,
+                name: s.name,
+                sector: s.sector,
+                price: s.price.date.length === 0 ? null : s.price.price,
+                priceDate: s.price.date.length === 0 ? null : s.price.date,
+                exchangeCurrency: s.exchange_currency,
+                financialsCurrency: s.financials.currency,
+                financialsDate: s.financials.date.length === 0 ? null : s.financials.date,
+                lower: s.analysis.lower,
+                convertedLower: s.financials.currency !== s.exchange_currency ? convertedLower : null,
+                upper: s.analysis.upper,
+                convertedUpper: s.financials.currency !== s.exchange_currency ? convertedUpper : null,
+                score: score,
+                fetchProgress: inProgress,
+        }})
+    );
+
+    async function handleFetch(symbol: string) {
+        let idx = tableData.findIndex((s) => s.symbol === symbol);
+        tableData[idx].fetchProgress = true;
+        await handleFetchPrice(symbol);
+        idx = tableData.findIndex((s) => s.symbol === symbol);
+        tableData[idx].fetchProgress = false;
+    }
+
+    function sort(col: string, ascending: boolean) {
+        // Modifier to sorting function for ascending or descending
+		let sortModifier = (ascending) ? 1 : -1;
+		
+		let sort = (a: any, b: any) => 
+			(a[col] < b[col]) 
+			? -1 * sortModifier 
+			: (a[col] > b[col]) 
+			? 1 * sortModifier 
+			: 0;
+		
+		return tableData.toSorted(sort);
+    }
+
+    function updateSortBy(col: string) {
+        if (sortBy.col == col) {
+			sortBy.ascending = !sortBy.ascending
+		} else {
+			sortBy.col = col
+			sortBy.ascending = true
+		}
+    }
+
+    let sortedTableDate = $derived(sort(sortBy.col, sortBy.ascending));
 </script>
 
 <div class="relative flex rounded-xl bg-clip-border py-8">
     <table class="w-full text-left table-auto">
         <thead>
             <tr>
-                <th class="p-4 border-b border-gray-300 bg-gray-200">Symbol</th>
-                <th class="p-4 border-b border-gray-300 bg-gray-200">Name</th>
-                <th class="p-4 border-b border-gray-300 bg-gray-200">Sector</th>
-                <th class="p-4 border-b border-gray-300 bg-gray-200">Price</th>
-                <th class="p-4 border-b border-gray-300 bg-gray-200"
+                <th class="p-4 border-b border-gray-300 bg-gray-200 hover:bg-gray-300 cursor-pointer" onclick={() => updateSortBy("symbol")}>Symbol</th>
+                <th class="p-4 border-b border-gray-300 bg-gray-200 hover:bg-gray-300 cursor-pointer" onclick={() => updateSortBy("name")}>Name</th>
+                <th class="p-4 border-b border-gray-300 bg-gray-200 hover:bg-gray-300 cursor-pointer" onclick={() => updateSortBy("sector")}>Sector</th>
+                <th class="p-4 border-b border-gray-300 bg-gray-200 hover:bg-gray-300 cursor-pointer" onclick={() => updateSortBy("price")}>Price</th>
+                <th class="p-4 border-b border-gray-300 bg-gray-200 hover:bg-gray-300 cursor-pointer" onclick={() => updateSortBy("lower")}
                     >Estimated Lower Bound</th
                 >
-                <th class="p-4 border-b border-gray-300 bg-gray-200"
+                <th class="p-4 border-b border-gray-300 bg-gray-200 hover:bg-gray-300 cursor-pointer" onclick={() => updateSortBy("upper")}
                     >Estimated Upper Bound</th
                 >
+                <th class="p-4 border-b border-gray-300 bg-gray-200 hover:bg-gray-300 cursor-pointer" onclick={() => updateSortBy("score")}>Score</th>
                 <th class="p-4 border-b border-gray-300 bg-gray-200">Actions</th
                 >
             </tr>
         </thead>
         <tbody>
-            {#if securities.length === 0}
+            {#if sortedTableDate.length === 0}
                 <tr>
                     <td colspan="7" class="text-center p-8 bg-gray-50"
                         >No securities found.</td
                     >
                 </tr>
             {:else}
-                {#each securities as security, idx}
+                {#each sortedTableDate as row}
                     <tr>
                         <td class="p-4 border-b border-gray-300 bg-gray-50"
-                            >{security.symbol}</td
+                            >{row.symbol}</td
                         >
                         <td class="p-4 border-b border-gray-300 bg-gray-50"
-                            >{security.name}</td
+                            >{row.name}</td
                         >
                         <td class="p-4 border-b border-gray-300 bg-gray-50"
-                            >{security.sector}</td
+                            >{row.sector}</td
                         >
                         <td class="p-4 border-b border-gray-300 bg-gray-50">
                             <div class="flex flex-row">
                                 <div class="row-span-2 gap-2 min-w-40">
                                     <p>
-                                        {security.price.date.length === 0
-                                            ? "NA"
-                                            : `${security.price.price} ${security.exchange_currency}`}
+                                        {row.price === null ? "NA" : `${row.price.toFixed(2)} ${row.exchangeCurrency}`}
                                     </p>
                                     <p class="text-xs text-gray-500">
-                                        Last Fetched: {security.price.date
-                                            .length == 0
+                                        Last Fetched: {row.priceDate === null
                                             ? "NA"
-                                            : security.price.date}
+                                            : row.priceDate
+                                        }
                                     </p>
                                 </div>
                                 <button
                                     class="flex bg-blue-200 px-4 py-2 rounded-full cursor-pointer disabled:bg-gray-300 disabled:cursor-not-allowed"
-                                    disabled={fetchProgress[idx]}
+                                    disabled={row.fetchProgress}
                                     onclick={() =>
-                                        handleFetch(security.symbol, idx)}
+                                        handleFetch(row.symbol)}
                                 >
                                     <p>Fetch</p>
-                                    {#if fetchProgress[idx]}
+                                    {#if row.fetchProgress}
                                         <Loading />
                                     {/if}
                                 </button>
@@ -97,74 +159,71 @@
                         </td>
                         <td class="p-4 border-b border-gray-300 bg-gray-50">
                             <p>
-                                {#if security.financials.date.length === 0}
+                                {#if row.financialsDate === null}
                                     NA
                                 {:else}
-                                    {#if security.analysis.lower === null}
+                                    {#if row.lower === null}
                                         NULL
                                     {:else}
-                                        {`${security.analysis.lower.toFixed(2)} ${security.financials.currency}`}
-                                        {#if security.financials.currency !== security.exchange_currency}
+                                        {`${row.lower.toFixed(2)} ${row.financialsCurrency}`}
+                                        {#if row.convertedLower !== null}
                                             <span class="mx-1">
-                                                ({(
-                                                    security.analysis.lower *
-                                                    rates[
-                                                        `${security.financials.currency}-${security.exchange_currency}`
-                                                    ]
-                                                ).toFixed(2)}
-                                                {security.exchange_currency})
+                                                ({row.convertedLower.toFixed(2)}
+                                                {row.exchangeCurrency})
                                             </span>
                                         {/if}
                                     {/if}
                                 {/if}
                             </p>
                             <p class="text-xs text-gray-500">
-                                Last Updated: {security.financials.date
-                                    .length == 0
+                                Last Updated: {row.financialsDate === null
                                     ? "NA"
-                                    : security.financials.date}
+                                    : row.financialsDate}
                             </p>
                         </td>
                         <td class="p-4 border-b border-gray-300 bg-gray-50">
                             <p>
-                                {#if security.financials.date.length === 0}
+                                {#if row.financialsDate === null}
                                     NA
                                 {:else}
-                                    {#if security.analysis.upper === null}
+                                    {#if row.upper === null}
                                         NULL
                                     {:else}
-                                        {`${security.analysis.upper.toFixed(2)} ${security.financials.currency}`}
-                                        {#if security.financials.currency !== security.exchange_currency}
+                                        {`${row.upper.toFixed(2)} ${row.financialsCurrency}`}
+                                        {#if row.convertedUpper !== null}
                                             <span class="mx-1">
-                                                ({(
-                                                    security.analysis.upper *
-                                                    rates[
-                                                        `${security.financials.currency}-${security.exchange_currency}`
-                                                    ]
-                                                ).toFixed(2)}
-                                                {security.exchange_currency})
+                                                ({row.convertedUpper.toFixed(2)}
+                                                {row.exchangeCurrency})
                                             </span>
                                         {/if}
                                     {/if}
                                 {/if}
                             </p>
                             <p class="text-xs text-gray-500">
-                                Last Updated: {security.financials.date
-                                    .length == 0
+                                Last Updated: {row.financialsDate === null
                                     ? "NA"
-                                    : security.financials.date}
+                                    : row.financialsDate}
+                            </p>
+                        </td>
+                        <td class="p-4 border-b border-gray-300 bg-gray-50">
+                            <p>
+                                {#if row.score === null}
+                                        NULL
+                                {:else}
+                                    {row.score.toFixed(2)}
+                                {/if}
                             </p>
                         </td>
                         <td class="p-4 border-b border-gray-300 bg-gray-50">
                             <div class="flex items-center gap-2">
                                 <a
                                     class="bg-blue-200 px-4 py-2 rounded-full cursor-pointer"
-                                    href={`/${security.symbol}`}>View/Update</a
+                                    href={`/${row.symbol}`}>View/Update</a
                                 >
                                 <button
                                     class="bg-red-400 px-4 py-2 rounded-full cursor-pointer"
                                     onclick={() =>
-                                        handleDelete(security.symbol)}
+                                        handleDelete(row.symbol)}
                                     >Delete</button
                                 >
                             </div>
