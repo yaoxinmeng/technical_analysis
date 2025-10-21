@@ -4,7 +4,7 @@
 
     interface Props {
         handleDelete: (id: string) => Promise<void>;
-        handleFetchPrice: (id: string) => Promise<void>;
+        handleFetchPrice: (id: string) => Promise<Security[]>;
         securities: Security[];
         inProgress: boolean;
         rates: { [key: string]: number };
@@ -35,9 +35,8 @@
         return price * rate;
     }
 
-    // create array to store table data
-    let tableData = $state(
-        securities.map((s) => {
+    function mapSecurities(securities: Security[]) {
+        return securities.map((s) => {
             let convertedUpper = convertPrice(s.analysis.upper, s.financials.currency, s.exchange_currency);
             let convertedLower = convertPrice(s.analysis.lower, s.financials.currency, s.exchange_currency);
             let score = null;
@@ -59,18 +58,24 @@
                 convertedUpper: s.financials.currency !== s.exchange_currency ? convertedUpper : null,
                 score: score,
                 fetchProgress: inProgress,
-        }})
-    );
+        }});
+    }
 
-    async function handleFetch(symbol: string) {
+    // create array to store table data
+    let tableData = $state(mapSecurities(securities));
+
+    async function onFetch(symbol: string) {
         let idx = tableData.findIndex((s) => s.symbol === symbol);
         tableData[idx].fetchProgress = true;
-        await handleFetchPrice(symbol);
+        let securities = await handleFetchPrice(symbol);
+        if (securities !== undefined) {
+            tableData = mapSecurities(securities);
+        }
         idx = tableData.findIndex((s) => s.symbol === symbol);
         tableData[idx].fetchProgress = false;
     }
 
-    function sort(col: string, ascending: boolean) {
+    function sort(col: string, ascending: boolean, data: string) {
         // Modifier to sorting function for ascending or descending
 		let sortModifier = (ascending) ? 1 : -1;
 		
@@ -93,7 +98,9 @@
 		}
     }
 
-    let sortedTableDate = $derived(sort(sortBy.col, sortBy.ascending));
+    let sortedTableDate = $derived(sort(sortBy.col, sortBy.ascending, JSON.stringify(tableData)));
+    $inspect(tableData);
+    $inspect(sortedTableDate);
 </script>
 
 <div class="relative flex rounded-xl bg-clip-border py-8">
@@ -151,7 +158,7 @@
                                     class="flex bg-blue-200 px-4 py-2 rounded-full cursor-pointer disabled:bg-gray-300 disabled:cursor-not-allowed"
                                     disabled={row.fetchProgress}
                                     onclick={() =>
-                                        handleFetch(row.symbol)}
+                                        onFetch(row.symbol)}
                                 >
                                     <p>Fetch</p>
                                     {#if row.fetchProgress}

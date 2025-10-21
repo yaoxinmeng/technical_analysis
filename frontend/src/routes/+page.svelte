@@ -117,6 +117,7 @@
         } catch (err: any) {
             console.error(err);
         }
+        return data.securities;
     }
 
     async function handleFetchAll() {
