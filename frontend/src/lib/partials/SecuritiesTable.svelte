@@ -21,6 +21,9 @@
     let sortBy = $state({col: "id", ascending: true});
 
     function convertPrice(price: number, from: string, to: string) {
+        if (!price || !from || !to) {
+            return price;
+        }
         if (from === to) {
             return price;
         }
