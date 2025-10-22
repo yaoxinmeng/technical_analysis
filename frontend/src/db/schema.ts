@@ -7,13 +7,15 @@ export type Security = {
         price: number
         date: string
     }
-    financials: {
-        currency: string
-        date: string
-        financials: Financial[]
-    }
+    financials: FinancialsOverview
     analysis: Analysis
     assumptions: Assumptions
+}
+
+export type FinancialsOverview = {
+    currency: string
+    date: string
+    financials: Financial[]
 }
 
 export type Financial = {

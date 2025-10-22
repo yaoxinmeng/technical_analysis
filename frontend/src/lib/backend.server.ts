@@ -5,7 +5,11 @@ export async function getSecurityOverview(id: string) {
     if (!res.ok) {
         throw new Error(`Failed to fetch security overview: ${res.statusText}`);
     }
-    return await res.json();
+    const result = await res.json();
+    if (!result["name"]) {
+        throw new Error(`Failed to fetch security overview: ${res.statusText}`);
+    }
+    return result;
 }
 
 export async function getSecurityPrice(id: string): Promise<number> {

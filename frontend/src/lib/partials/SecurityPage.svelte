@@ -22,6 +22,7 @@
     let canSave = $derived(
         JSON.stringify(security) !== JSON.stringify(initialSecurity),
     );
+    let analysis = $derived( generateAnalysis(security.financials.financials, security.assumptions));
 
     async function handleFetch() {
         inProgress = true;
@@ -41,7 +42,7 @@
     }
 
     $effect(() => {
-        security.analysis = generateAnalysis(security.financials.financials, security.assumptions);
+        security.analysis = analysis;
     });
 </script>
 

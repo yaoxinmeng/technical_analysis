@@ -4,7 +4,7 @@
 
     interface Props {
         handleDelete: (id: string) => Promise<void>;
-        handleFetchPrice: (id: string) => Promise<Security[]>;
+        handleFetchPrice: (id: string) => Promise<void>;
         securities: Security[];
         inProgress: boolean;
         rates: { [key: string]: number };
@@ -19,6 +19,7 @@
     }: Props = $props();
 
     let sortBy = $state({col: "id", ascending: true});
+    let fetchProgresses = $state(securities.map(() => inProgress));
 
     function convertPrice(price: number, from: string, to: string) {
         if (!price || !from || !to) {
@@ -36,7 +37,7 @@
     }
 
     function mapSecurities(securities: Security[]) {
-        return securities.map((s) => {
+        return securities.map((s, idx) => {
             let convertedUpper = convertPrice(s.analysis.upper, s.financials.currency, s.exchange_currency);
             let convertedLower = convertPrice(s.analysis.lower, s.financials.currency, s.exchange_currency);
             let score = null;
@@ -44,6 +45,7 @@
                 score = 1 - (s.price.price - convertedLower) / (convertedUpper - convertedLower);
             }
             return {
+                idx: idx,
                 symbol: s.symbol,
                 name: s.name,
                 sector: s.sector,
@@ -56,26 +58,21 @@
                 convertedLower: s.financials.currency !== s.exchange_currency ? convertedLower : null,
                 upper: s.analysis.upper,
                 convertedUpper: s.financials.currency !== s.exchange_currency ? convertedUpper : null,
-                score: score,
-                fetchProgress: inProgress,
+                score: score
         }});
     }
 
     // create array to store table data
-    let tableData = $state(mapSecurities(securities));
+    let tableData = $derived(mapSecurities(securities));
 
     async function onFetch(symbol: string) {
-        let idx = tableData.findIndex((s) => s.symbol === symbol);
-        tableData[idx].fetchProgress = true;
-        let securities = await handleFetchPrice(symbol);
-        if (securities !== undefined) {
-            tableData = mapSecurities(securities);
-        }
-        idx = tableData.findIndex((s) => s.symbol === symbol);
-        tableData[idx].fetchProgress = false;
+        let idx = tableData.filter((s) => s.symbol === symbol)[0].idx;
+        fetchProgresses[idx] = true;
+        await handleFetchPrice(symbol);
+        fetchProgresses[idx] = false;
     }
 
-    function sort(col: string, ascending: boolean, data: string) {
+    function sort(col: string, ascending: boolean) {
         // Modifier to sorting function for ascending or descending
 		let sortModifier = (ascending) ? 1 : -1;
 		
@@ -98,14 +95,14 @@
 		}
     }
 
-    let sortedTableDate = $derived(sort(sortBy.col, sortBy.ascending, JSON.stringify(tableData)));
+    let sortedTableDate = $derived(sort(sortBy.col, sortBy.ascending));
     $inspect(tableData);
     $inspect(sortedTableDate);
 </script>
 
-<div class="relative flex rounded-xl bg-clip-border py-8">
+<div class="my-8 h-[calc(100%-200px)] overflow-y-auto">
     <table class="w-full text-left table-auto">
-        <thead>
+        <thead class="sticky top-0 z-10">
             <tr>
                 <th class="p-4 border-b border-gray-300 bg-gray-200 hover:bg-gray-300 cursor-pointer" onclick={() => updateSortBy("symbol")}>Symbol</th>
                 <th class="p-4 border-b border-gray-300 bg-gray-200 hover:bg-gray-300 cursor-pointer" onclick={() => updateSortBy("name")}>Name</th>
@@ -122,7 +119,7 @@
                 >
             </tr>
         </thead>
-        <tbody>
+        <tbody class="overflow-y-auto">
             {#if sortedTableDate.length === 0}
                 <tr>
                     <td colspan="7" class="text-center p-8 bg-gray-50"
@@ -156,12 +153,12 @@
                                 </div>
                                 <button
                                     class="flex bg-blue-200 px-4 py-2 rounded-full cursor-pointer disabled:bg-gray-300 disabled:cursor-not-allowed"
-                                    disabled={row.fetchProgress}
+                                    disabled={fetchProgresses[row.idx]}
                                     onclick={() =>
                                         onFetch(row.symbol)}
                                 >
                                     <p>Fetch</p>
-                                    {#if row.fetchProgress}
+                                    {#if fetchProgresses[row.idx]}
                                         <Loading />
                                     {/if}
                                 </button>
