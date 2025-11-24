@@ -5,6 +5,7 @@
     import LoadingOverlay from "$lib/components/LoadingOverlay.svelte";
     import ExchangeRatesDropdown from "$lib/partials/ExchangeRatesDropdown.svelte";
     import { exportCsv } from "$lib/utils/csvUtils";
+    import { saveSecurityOverview, updateSecurity } from "$lib/api";
     import { invalidateAll } from "$app/navigation";
     import type { Security } from "$db/schema";
 
@@ -35,21 +36,9 @@
             let result = await res.json();
             console.log(result);
             // save the security to the watchlist
-            res = await fetch(`/api/db`, {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify({
-                    id: securityId,
-                    name: result.name,
-                    sector: result.sector,
-                    currency: result.exchange_currency,
-                }),
-            });
-            if (!res.ok) {
-                throw new Error(`Failed to save security: ${res.statusText}`);
-            }
+            await saveSecurityOverview(securityId, result.name, result.sector, result.exchange_currency);
+            // fetch prices for the new security
+            await handleFetchPrice(securityId);
             openDialog = false;
             inProgress = false;
             // refresh the page to show the new security
@@ -90,16 +79,7 @@
         security.price.price = result;
         security.price.date = new Date().toISOString().split("T")[0]; // format date as YYYY-MM-DD
         // update the security's price in the database
-        res = await fetch(`/api/db/${security.symbol}`, {
-            method: "PUT",
-            headers: {
-                "Content-Type": "application/json",
-            },
-            body: JSON.stringify(security),
-        });
-        if (!res.ok) {
-            throw new Error(`Failed to update price: ${res.statusText}`);
-        }
+        await updateSecurity(security);
     }
 
     async function handleFetchPrice(securityId: string) {

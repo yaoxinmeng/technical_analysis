@@ -4,6 +4,7 @@
     import SecurityPage from "$lib/partials/SecurityPage.svelte";
     import type { Financial, Security } from "$db/schema";
     import { generateAnalysis, updateExistingFinancials } from "$lib/utils/calculations";
+    import { updateSecurity } from "$lib/api";
 
     let { data }: PageProps = $props();
     let security = $state(data.security);
@@ -67,17 +68,8 @@
     }
 
     async function saveSecurity(security: Security) {
-        // update the security's price in the database
-        const res = await fetch(`/api/db/${security.symbol}`, {
-            method: "PUT",
-            headers: {
-                "Content-Type": "application/json",
-            },
-            body: JSON.stringify(security),
-        });
-        if (!res.ok) {
-            throw new Error(`Failed to update price: ${res.statusText}`);
-        }
+        // update the security in the database
+        await updateSecurity(security);
         // refresh the page to show the updated price
         await invalidateAll();
     }
