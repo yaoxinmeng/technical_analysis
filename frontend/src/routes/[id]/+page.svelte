@@ -85,6 +85,7 @@
 
 <SecurityPage
     initialSecurity={data.security}
+    rates={data.rates}
     {fetchFinancials}
     {saveSecurity}
     {generateAnalysis}

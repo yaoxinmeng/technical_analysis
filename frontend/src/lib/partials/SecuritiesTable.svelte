@@ -1,6 +1,7 @@
 <script lang="ts">
     import Loading from "$lib/components/LoadingIcon.svelte";
     import type { Security } from "$db/schema";
+    import { convertPrice } from "$lib/utils/calculations";
 
     interface Props {
         handleDelete: (id: string) => Promise<void>;
@@ -21,25 +22,10 @@
     let sortBy = $state({col: "id", ascending: true});
     let fetchProgresses = $state(securities.map(() => inProgress));
 
-    function convertPrice(price: number, from: string, to: string) {
-        if (!price || !from || !to) {
-            return price;
-        }
-        if (from === to) {
-            return price;
-        }
-        const rateKey = `${from}-${to}`;
-        const rate = rates[rateKey];
-        if (!rate) {
-            throw new Error(`No exchange rate found for ${rateKey}`);
-        }
-        return price * rate;
-    }
-
     function mapSecurities(securities: Security[]) {
         return securities.map((s, idx) => {
-            let convertedUpper = convertPrice(s.analysis.upper, s.financials.currency, s.exchange_currency);
-            let convertedLower = convertPrice(s.analysis.lower, s.financials.currency, s.exchange_currency);
+            let convertedUpper = convertPrice(s.analysis.upper, rates, s.financials.currency, s.exchange_currency);
+            let convertedLower = convertPrice(s.analysis.lower, rates, s.financials.currency, s.exchange_currency);
             let score = null;
             if (s.analysis.upper > 0 && s.analysis.lower > 0 && s.price.price > 0) {
                 score = 1 - (s.price.price - convertedLower) / (convertedUpper - convertedLower);

@@ -101,3 +101,25 @@ export function updateExistingFinancials(existing: Financial[], newFinancials: F
 
     return finalFinancials;
 }
+
+
+export function convertPrice(price: number, rates: { [key: string]: number }, from: string, to: string) {
+    if (!price || !from || !to) {
+        return price;
+    }
+    if (from === to) {
+        return price;
+    }
+    const rateKey = `${from}-${to}`;
+    const rate = rates[rateKey];
+    if (rate) {
+        return price * rate;
+    }
+    
+    const reverseRateKey = `${to}-${from}`;
+    const reverseRate = rates[reverseRateKey];
+    if (!reverseRate) {
+        throw new Error(`No exchange rate found for ${rateKey} or ${reverseRateKey}`);
+    }
+    return price / reverseRate;
+}

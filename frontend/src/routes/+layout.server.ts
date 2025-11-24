@@ -1,9 +1,9 @@
-import type { PageServerLoad } from './$types';
+import type { LayoutServerLoad } from './$types';
 import { securities, exchangeRates } from '$db/mongo';
 import type { Security, ExchangeRate } from '$db/schema';
 import { getExchangeRate } from '$lib/backend.server';
 
-export const load: PageServerLoad = async () => {
+export const load: LayoutServerLoad = async () => {
 	let cursor = securities.find();
 	let documents = await cursor.toArray();
 	let parsed = documents.map((doc) => {

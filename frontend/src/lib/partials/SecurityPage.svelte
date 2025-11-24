@@ -1,9 +1,11 @@
 <script lang="ts">
     import Loading from "$lib/components/LoadingIcon.svelte";
     import type { Security, Financial, Assumptions, Analysis } from "$db/schema";
+    import { convertPrice } from "$lib/utils/calculations";
 
     interface Props {
         initialSecurity: Security;
+        rates: { [key: string]: number };
         fetchFinancials: () => Promise<Security>;
         saveSecurity: (security: Security) => Promise<void>;
         generateAnalysis: (financials: Financial[], assumptions: Assumptions) => Analysis;
@@ -11,6 +13,7 @@
 
     let {
         initialSecurity,
+        rates,
         fetchFinancials,
         saveSecurity,
         generateAnalysis
@@ -19,6 +22,14 @@
     let security = $state(initialSecurity);
     let inProgress = $state(false);
 
+    let price = $derived(
+        security.price.price === null ? null : convertPrice(
+            security.price.price,
+            rates,
+            security.exchange_currency,
+            security.financials.currency,
+        ),
+    );
     let canSave = $derived(
         JSON.stringify(security) !== JSON.stringify(initialSecurity),
     );
@@ -61,7 +72,28 @@
         </button>
     </div>
     <div class="flex flex-col mt-8 gap-4">
-        <div class="flex flex-row gap-4">
+        <div class="grid grid-cols-6 gap-4">
+            <div class="flex flex-col gap-4 bg-gray-100 rounded-xl p-6">
+                <h2 class="text-2xl">Price</h2>
+                <div class="flex flex-col gap-1">
+                    <label for="currentPrice">Price</label>
+                    <p class="bg-gray-200 py-2 px-4 rounded-full text-base">
+                        {security.price.price === null ? "NA" : `${security.price.price.toFixed(2)} ${security.exchange_currency}`}
+                    </p>
+                </div>
+                <div class="flex flex-col gap-1">
+                    <label for="currentPrice">Converted Price</label>
+                    <p class="bg-gray-200 py-2 px-4 rounded-full text-base">
+                        {price === null ? "NA" : `${price.toFixed(2)} ${security.financials.currency}`}
+                    </p>
+                </div>
+                <div class="flex flex-col gap-1">
+                    <label for="currentPrice">Last Fetched</label>
+                    <p class="bg-gray-200 py-2 px-4 rounded-full text-base">
+                        {security.price.date}
+                    </p>
+                </div>
+            </div>
             <div class="flex flex-col gap-4 bg-gray-100 rounded-xl p-6">
                 <h2 class="text-2xl">Assumptions</h2>
                 <div class="flex flex-col gap-1">
@@ -100,7 +132,7 @@
                     />
                 </div>
             </div>
-            <div class="flex-1 bg-gray-100 rounded-xl p-6">
+            <div class="col-span-4 bg-gray-100 rounded-xl p-6">
                 <h2 class="text-2xl">Analysis</h2>
                 <div class="flex flex-col gap-4 mt-4">
                     <h3 class="font-semibold">Technical Analysis</h3>
