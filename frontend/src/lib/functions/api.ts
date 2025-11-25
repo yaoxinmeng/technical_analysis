@@ -40,12 +40,21 @@ export async function deleteSecurity(securityId: string) {
     }
 }
 
-export async function fetchSecurityOverview(securityId: string): Promise<Security> {
+export async function fetchSecurityOverview(securityId: string): Promise<SecurityOverview> {
     let res = await fetch(`/api/backend/${securityId}?info=overview`);
     if (!res.ok) {
         throw new Error(
             `Failed to fetch security data: ${res.statusText}`,
         );
+    }
+    let result = await res.json();
+    return result;
+}
+
+export async function fetchSecurityPrice(securityId: string): Promise<number> {
+    let res = await fetch(`/api/backend/${securityId}?info=price`);
+    if (!res.ok) {
+        throw new Error(`Failed to fetch price data: ${res.statusText}`);
     }
     let result = await res.json();
     return result;

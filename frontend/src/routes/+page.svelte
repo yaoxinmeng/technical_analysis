@@ -5,7 +5,7 @@
     import LoadingOverlay from "$lib/components/LoadingOverlay.svelte";
     import ExchangeRatesDropdown from "$lib/partials/ExchangeRatesDropdown.svelte";
     import { exportCsv } from "../lib/functions/utils/csvUtils";
-    import { saveSecurityOverview, updateSecurity, deleteSecurity } from "../lib/functions/api";
+    import { saveSecurityOverview, updateSecurity, deleteSecurity, fetchSecurityOverview, fetchSecurityPrice } from "../lib/functions/api";
     import { invalidateAll } from "$app/navigation";
     import type { Security } from "$lib/types/schema";
 
@@ -27,13 +27,7 @@
         console.log("Add security:", securityId);
         try {
             // fetch results from the backend API
-            let res = await fetch(`/api/backend/${securityId}?info=overview`);
-            if (!res.ok) {
-                throw new Error(
-                    `Failed to fetch security data: ${res.statusText}`,
-                );
-            }
-            let result = await res.json();
+            let result = await fetchSecurityOverview(securityId);
             console.log(result);
             // save the security to the watchlist
             await saveSecurityOverview(securityId, result.name, result.sector, result.exchange_currency);
@@ -65,13 +59,7 @@
 
     async function fetchAndUpdatePrice(security: Security) {
         // fetch the latest price for the security
-        let res = await fetch(`/api/backend/${security.symbol}?info=price`);
-        if (!res.ok) {
-            throw new Error(`Failed to fetch price data: ${res.statusText}`);
-        }
-        let result = await res.json();
-        console.log(result);
-        security.price.price = result;
+        security.price.price = await fetchSecurityPrice(security.symbol);
         security.price.date = new Date().toISOString().split("T")[0]; // format date as YYYY-MM-DD
         // update the security's price in the database
         await updateSecurity(security);
