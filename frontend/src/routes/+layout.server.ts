@@ -1,7 +1,7 @@
 import type { LayoutServerLoad } from './$types';
-import { securities, exchangeRates } from '$db/mongo';
-import type { Security, ExchangeRate } from '$db/schema';
-import { getExchangeRate } from '$lib/backend.server';
+import { securities, exchangeRates } from '$lib/functions/mongo';
+import type { Security, ExchangeRate } from '$lib/types/schema';
+import { getExchangeRate } from '$lib/functions/backend.server';
 
 export const load: LayoutServerLoad = async () => {
 	let cursor = securities.find();

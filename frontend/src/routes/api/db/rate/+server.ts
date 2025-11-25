@@ -1,7 +1,7 @@
 import type { RequestHandler } from './$types';
 import { error } from '@sveltejs/kit';
-import { exchangeRates } from '$db/mongo';
-import type { ExchangeRate } from '$db/schema';
+import { exchangeRates } from '$lib/functions/mongo';
+import type { ExchangeRate } from '$lib/types/schema';
 
 export const PUT: RequestHandler = async ({ request }) => {
     const body: ExchangeRate = await request.json();

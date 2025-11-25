@@ -4,10 +4,10 @@
     import SecuritiesTable from "$lib/partials/SecuritiesTable.svelte";
     import LoadingOverlay from "$lib/components/LoadingOverlay.svelte";
     import ExchangeRatesDropdown from "$lib/partials/ExchangeRatesDropdown.svelte";
-    import { exportCsv } from "$lib/utils/csvUtils";
-    import { saveSecurityOverview, updateSecurity } from "$lib/api";
+    import { exportCsv } from "../lib/functions/utils/csvUtils";
+    import { saveSecurityOverview, updateSecurity, deleteSecurity } from "../lib/functions/api";
     import { invalidateAll } from "$app/navigation";
-    import type { Security } from "$db/schema";
+    import type { Security } from "$lib/types/schema";
 
     let { data }: PageProps = $props();
 
@@ -55,12 +55,7 @@
         console.log("Delete security:", securityId);
         try {
             // delete the security from the watchlist
-            let res = await fetch(`/api/db/${securityId}`, {
-                method: "DELETE",
-            });
-            if (!res.ok) {
-                throw new Error(`Failed to delete security: ${res.statusText}`);
-            }
+            await deleteSecurity(securityId);
             // refresh the page to show the updated watchlist
             await invalidateAll();
         } catch (err: any) {

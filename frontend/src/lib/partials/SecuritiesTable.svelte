@@ -1,7 +1,7 @@
 <script lang="ts">
     import Loading from "$lib/components/LoadingIcon.svelte";
-    import type { Security } from "$db/schema";
-    import { convertPrice } from "$lib/utils/calculations";
+    import type { Security } from "$lib/types/schema";
+    import { convertPrice } from "$lib/functions/utils/calculations";
 
     interface Props {
         handleDelete: (id: string) => Promise<void>;

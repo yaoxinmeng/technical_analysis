@@ -56,3 +56,9 @@ export type ExchangeRate = {
     rate: number
     date: string
 }
+
+export type SecurityOverview = {
+    name: string
+    sector: string
+    exchange_currency: string
+}

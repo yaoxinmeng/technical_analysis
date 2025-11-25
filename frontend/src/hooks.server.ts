@@ -1,6 +1,6 @@
 import { type Handle, redirect } from '@sveltejs/kit';
-import { start_mongo } from "$db/mongo";
-import { verifyToken } from '$lib/auth.server';
+import { start_mongo } from "$lib/functions/mongo";
+import { verifyToken } from '$lib/functions/auth.server';
 
 // Start MongoDB connection
 start_mongo().then(() => {

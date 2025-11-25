@@ -1,6 +1,6 @@
 import type { RequestHandler } from './$types';
 import { error } from '@sveltejs/kit';
-import { getExchangeRate } from '$lib/backend.server';
+import { getExchangeRate } from '$lib/functions/backend.server';
 
 export const GET: RequestHandler = async ({ url }) => {
     const curr1 = url.searchParams.get('curr1');

@@ -1,4 +1,4 @@
-import type { Analysis, Financial, Assumptions } from "$db/schema";
+import type { Analysis, Financial, Assumptions } from "$lib/types/schema";
 
 const INTEREST_RATE = 0.0328;
 

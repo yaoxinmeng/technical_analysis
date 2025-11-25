@@ -1,4 +1,4 @@
-import type { Security } from "$db/schema";
+import type { Security, SecurityOverview } from "$lib/types/schema";
 
 export async function saveSecurityOverview(securityId: string, name: string, sector: string, currency: string) {
     const res = await fetch(`/api/db`, {
@@ -29,4 +29,24 @@ export async function updateSecurity(security: Security) {
     if (!res.ok) {
         throw new Error(`Failed to update price: ${res.statusText}`);
     }
+}
+
+export async function deleteSecurity(securityId: string) {
+    let res = await fetch(`/api/db/${securityId}`, {
+        method: "DELETE",
+    });
+    if (!res.ok) {
+        throw new Error(`Failed to delete security: ${res.statusText}`);
+    }
+}
+
+export async function fetchSecurityOverview(securityId: string): Promise<Security> {
+    let res = await fetch(`/api/backend/${securityId}?info=overview`);
+    if (!res.ok) {
+        throw new Error(
+            `Failed to fetch security data: ${res.statusText}`,
+        );
+    }
+    let result = await res.json();
+    return result;
 }

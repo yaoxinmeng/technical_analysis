@@ -1,7 +1,7 @@
 import type { RequestHandler } from './$types';
 import { error } from '@sveltejs/kit';
-import { securities } from '$db/mongo';
-import type { Security } from '$db/schema';
+import { securities } from '$lib/functions/mongo';
+import type { Security } from '$lib/types/schema';
 
 export const POST: RequestHandler = async ({ request }) => {
     const body: {

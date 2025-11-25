@@ -1,7 +1,7 @@
 <script lang="ts">
     import Loading from "$lib/components/LoadingIcon.svelte";
-    import type { Security, Financial, Assumptions, Analysis, FinancialsOverview } from "$db/schema";
-    import { convertPrice } from "$lib/utils/calculations";
+    import type { Security, Financial, Assumptions, Analysis, FinancialsOverview } from "$lib/types/schema";
+    import { convertPrice } from "$lib/functions/utils/calculations";
 
     interface Props {
         security: Security;

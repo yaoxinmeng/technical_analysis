@@ -1,6 +1,6 @@
 import type { PageServerLoad } from './$types';
-import { securities } from '$db/mongo';
-import type { Security } from '$db/schema';
+import { securities } from '$lib/functions/mongo';
+import type { Security } from '$lib/types/schema';
 
 export const load: PageServerLoad = async ({ params }) => {
     let doc = await securities.findOne({

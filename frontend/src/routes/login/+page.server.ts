@@ -1,6 +1,6 @@
 import { fail, redirect } from '@sveltejs/kit';
 import type { Actions } from './$types';
-import { generateToken } from "$lib/auth.server";
+import { generateToken } from "$lib/functions/auth.server";
 
 export const actions = {
     default: async ({ cookies, request }) => {

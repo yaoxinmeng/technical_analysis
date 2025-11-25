@@ -1,4 +1,4 @@
-import type { Security } from '$db/schema';
+import type { Security } from '$lib/types/schema';
 
 export const exportCsv = (data: Security[]) => {
     let headerKeys = [

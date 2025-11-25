@@ -2,9 +2,9 @@
     import type { PageProps } from "./$types";
     import { invalidateAll } from "$app/navigation";
     import SecurityPage from "$lib/partials/SecurityPage.svelte";
-    import type { Financial, Security } from "$db/schema";
-    import { generateAnalysis, updateExistingFinancials } from "$lib/utils/calculations";
-    import { updateSecurity } from "$lib/api";
+    import type { Financial, Security } from "$lib/types/schema";
+    import { generateAnalysis, updateExistingFinancials } from "$lib/functions/utils/calculations";
+    import { updateSecurity } from "$lib/functions/api";
 
     let { data }: PageProps = $props();
     let security = $state(data.security);
