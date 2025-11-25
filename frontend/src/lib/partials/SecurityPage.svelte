@@ -21,6 +21,7 @@
     
     let security = $state(initialSecurity);
     let inProgress = $state(false);
+    let assumptions = $state(initialSecurity.assumptions);
 
     let price = $derived(
         security.price.price === null ? null : convertPrice(
@@ -30,17 +31,32 @@
             security.financials.currency,
         ),
     );
+    let analysis = $derived(generateAnalysis(security.financials.financials, assumptions));
     let canSave = $derived(
-        JSON.stringify(security) !== JSON.stringify(initialSecurity),
+        JSON.stringify(assumptions) !== JSON.stringify(initialSecurity.assumptions) ||
+        JSON.stringify(analysis) !== JSON.stringify(initialSecurity.analysis) ||
+        JSON.stringify(security.financials) !== JSON.stringify(initialSecurity.financials)
     );
-    let analysis = $derived( generateAnalysis(security.financials.financials, security.assumptions));
 
     async function handleFetch() {
         inProgress = true;
         try {
             security = await fetchFinancials();
+            analysis = generateAnalysis(security.financials.financials, assumptions);
         } catch (error) {
             console.error("Error fetching financials:", error);
+        }
+        inProgress = false;
+    }
+
+    async function handleSave() {
+        inProgress = true;
+        try {
+            security.analysis = analysis;
+            security.assumptions = assumptions;
+            await saveSecurity(security);
+        } catch (error) {
+            console.error("Error saving security:", error);
         }
         inProgress = false;
     }
@@ -51,10 +67,6 @@
         }
         return Number.parseFloat(value.replace(/,/g, ""));
     }
-
-    $effect(() => {
-        security.analysis = analysis;
-    });
 </script>
 
 <div class="h-screen w-full mx-8 my-8 md:px-16">
@@ -66,7 +78,7 @@
         <button
             class="flex bg-blue-200 px-4 py-2 rounded-full cursor-pointer disabled:cursor-not-allowed disabled:bg-gray-300"
             disabled={!canSave}
-            onclick={() => saveSecurity(security)}
+            onclick={handleSave}
         >
             Save
         </button>
@@ -102,32 +114,34 @@
                         id="growth"
                         type="number"
                         class="bg-white py-2 px-4 rounded-full"
-                        value={security.assumptions.growth_rate * 100}
+                        value={assumptions.growth_rate * 100}
                         onchange={(e) => {
                             let growthPercent = parseNumber((<HTMLInputElement>e.target).value);
-                            security.assumptions.growth_rate = growthPercent / 100;
+                            assumptions.growth_rate = growthPercent / 100;
                         }}
                     />
                 </div>
                 <div class="flex flex-col gap-1">
                     <label for="horizon">Estimated Horizon (years)</label>
                     <input
+                        disabled
                         id="horizon"
                         type="number"
-                        class="bg-white py-2 px-4 rounded-full"
-                        bind:value={security.assumptions.years}
+                        class="bg-gray-200 py-2 px-4 rounded-full"
+                        bind:value={assumptions.years}
                     />
                 </div>
                 <div class="flex flex-col gap-1">
                     <label for="horizon">Safety Margin (%)</label>
                     <input
+                        disabled
                         id="horizon"
                         type="number"
-                        class="bg-white py-2 px-4 rounded-full"
-                        value={security.assumptions.safety_margin * 100}
+                        class="bg-gray-200 py-2 px-4 rounded-full"
+                        value={assumptions.safety_margin * 100}
                         onchange={(e) => {
                             let safetyMarginPercent = parseNumber((<HTMLInputElement>e.target).value);
-                            security.assumptions.safety_margin = safetyMarginPercent / 100;
+                            assumptions.safety_margin = safetyMarginPercent / 100;
                         }}
                     />
                 </div>
@@ -146,7 +160,7 @@
                             <p
                                 class="bg-green-200 py-2 px-4 rounded-full text-base"
                             >
-                                {Math.round(security.analysis.average_income)}
+                                {Math.round(analysis.average_income)}
                             </p>
                         </div>
                         <div class="flex flex-col gap-1 min-w-20">
@@ -154,10 +168,10 @@
                             <p
                                 class="bg-green-200 py-2 px-4 rounded-full text-base"
                             >
-                            {#if security.analysis.de_ratio === null}
+                            {#if analysis.de_ratio === null}
                                 NULL
                             {:else}
-                                {(security.analysis.de_ratio * 100).toFixed(2)} %
+                                {(analysis.de_ratio * 100).toFixed(2)} %
                             {/if}
                             </p>
                         </div>
@@ -166,10 +180,10 @@
                             <p
                                 class="bg-green-200 py-2 px-4 rounded-full text-base"
                             >
-                                {#if security.analysis.bvps === null}
+                                {#if analysis.bvps === null}
                                     NULL
                                 {:else}
-                                    {security.analysis.bvps.toFixed(2)}
+                                    {analysis.bvps.toFixed(2)}
                                 {/if}
                             </p>
                         </div>
@@ -178,10 +192,10 @@
                             <p
                                 class="bg-green-200 py-2 px-4 rounded-full text-base"
                             >
-                                {#if security.analysis.cagr === null}
+                                {#if analysis.cagr === null}
                                     NULL
                                 {:else}
-                                    {(security.analysis.cagr * 100).toFixed(2)} %
+                                    {(analysis.cagr * 100).toFixed(2)} %
                                 {/if}
                             </p>
                         </div>
@@ -193,10 +207,10 @@
                             <p
                                 class="bg-green-200 py-2 px-4 rounded-full text-base"
                             >
-                                {#if security.analysis.lower === null}
+                                {#if analysis.lower === null}
                                     NULL
                                 {:else}
-                                    {security.analysis.lower.toFixed(2)}
+                                    {analysis.lower.toFixed(2)}
                                 {/if}
                             </p>
                         </div>
@@ -205,10 +219,10 @@
                             <p
                                 class="bg-green-200 py-2 px-4 rounded-full text-base"
                             >
-                                {#if security.analysis.target === null}
+                                {#if analysis.target === null}
                                     NULL
                                 {:else}
-                                    {security.analysis.target.toFixed(2)}
+                                    {analysis.target.toFixed(2)}
                                 {/if}
                             </p>
                         </div>
@@ -217,10 +231,10 @@
                             <p
                                 class="bg-green-200 py-2 px-4 rounded-full text-base"
                             >
-                                {#if security.analysis.upper === null}
+                                {#if analysis.upper === null}
                                     NULL
                                 {:else}
-                                    {security.analysis.upper.toFixed(2)}
+                                    {analysis.upper.toFixed(2)}
                                 {/if}
                             </p>
                         </div>
@@ -232,10 +246,10 @@
                             <p
                                 class="bg-green-200 py-2 px-4 rounded-full text-base"
                             >
-                                {#if security.analysis.nominal_lower === null}
+                                {#if analysis.nominal_lower === null}
                                     NULL
                                 {:else}
-                                    {security.analysis.nominal_lower.toFixed(2)}
+                                    {analysis.nominal_lower.toFixed(2)}
                                 {/if}
                             </p>
                         </div>
@@ -244,10 +258,10 @@
                             <p
                                 class="bg-green-200 py-2 px-4 rounded-full text-base"
                             >
-                                {#if security.analysis.nominal_target === null}
+                                {#if analysis.nominal_target === null}
                                     NULL
                                 {:else}
-                                    {security.analysis.nominal_target.toFixed(2)}
+                                    {analysis.nominal_target.toFixed(2)}
                                 {/if}
                             </p>
                         </div>
@@ -256,10 +270,10 @@
                             <p
                                 class="bg-green-200 py-2 px-4 rounded-full text-base"
                             >
-                                {#if security.analysis.nominal_upper === null}
+                                {#if analysis.nominal_upper === null}
                                     NULL
                                 {:else}
-                                    {security.analysis.nominal_upper.toFixed(2)}
+                                    {analysis.nominal_upper.toFixed(2)}
                                 {/if}
                             </p>
                         </div>
