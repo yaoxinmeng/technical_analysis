@@ -57,13 +57,9 @@
 
         // return updated security
         return {
-            ...security,
-            financials: {
-                date: new Date().toISOString().split("T")[0], // format date as YYYY-MM-DD
-                currency: result.financial_statement.financials_currency,
-                financials: newFinancials,
-            },
-            analysis: generateAnalysis(newFinancials, security.assumptions),
+            date: new Date().toISOString().split("T")[0], // format date as YYYY-MM-DD
+            currency: result.financial_statement.financials_currency,
+            financials: newFinancials,
         };
     }
 
@@ -76,7 +72,7 @@
 </script>
 
 <SecurityPage
-    initialSecurity={data.security}
+    security={data.security}
     rates={data.rates}
     {fetchFinancials}
     {saveSecurity}

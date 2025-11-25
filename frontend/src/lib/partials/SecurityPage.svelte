@@ -1,27 +1,27 @@
 <script lang="ts">
     import Loading from "$lib/components/LoadingIcon.svelte";
-    import type { Security, Financial, Assumptions, Analysis } from "$db/schema";
+    import type { Security, Financial, Assumptions, Analysis, FinancialsOverview } from "$db/schema";
     import { convertPrice } from "$lib/utils/calculations";
 
     interface Props {
-        initialSecurity: Security;
+        security: Security;
         rates: { [key: string]: number };
-        fetchFinancials: () => Promise<Security>;
+        fetchFinancials: () => Promise<FinancialsOverview>;
         saveSecurity: (security: Security) => Promise<void>;
         generateAnalysis: (financials: Financial[], assumptions: Assumptions) => Analysis;
     }
 
     let {
-        initialSecurity,
+        security,
         rates,
         fetchFinancials,
         saveSecurity,
         generateAnalysis
     }: Props = $props();
     
-    let security = $state(initialSecurity);
     let inProgress = $state(false);
-    let assumptions = $state(initialSecurity.assumptions);
+    let assumptions = $state(security.assumptions);
+    let financials = $state(security.financials);
 
     let price = $derived(
         security.price.price === null ? null : convertPrice(
@@ -31,18 +31,16 @@
             security.financials.currency,
         ),
     );
-    let analysis = $derived(generateAnalysis(security.financials.financials, assumptions));
+    let analysis = $derived(generateAnalysis(financials.financials, assumptions));
     let canSave = $derived(
-        JSON.stringify(assumptions) !== JSON.stringify(initialSecurity.assumptions) ||
-        JSON.stringify(analysis) !== JSON.stringify(initialSecurity.analysis) ||
-        JSON.stringify(security.financials) !== JSON.stringify(initialSecurity.financials)
+        JSON.stringify(assumptions) !== JSON.stringify(security.assumptions) ||
+        JSON.stringify(financials) !== JSON.stringify(security.financials)
     );
 
     async function handleFetch() {
         inProgress = true;
         try {
-            security = await fetchFinancials();
-            analysis = generateAnalysis(security.financials.financials, assumptions);
+            financials = await fetchFinancials();
         } catch (error) {
             console.error("Error fetching financials:", error);
         }
@@ -52,8 +50,9 @@
     async function handleSave() {
         inProgress = true;
         try {
-            security.analysis = analysis;
             security.assumptions = assumptions;
+            security.financials = financials;
+            security.analysis = analysis;
             await saveSecurity(security);
         } catch (error) {
             console.error("Error saving security:", error);
@@ -96,7 +95,7 @@
                 <div class="flex flex-col gap-1">
                     <label for="currentPrice">Converted Price</label>
                     <p class="bg-gray-200 py-2 px-4 rounded-full text-base">
-                        {price === null ? "NA" : `${price.toFixed(2)} ${security.financials.currency}`}
+                        {price === null ? "NA" : `${price.toFixed(2)} ${financials.currency}`}
                     </p>
                 </div>
                 <div class="flex flex-col gap-1">
@@ -153,8 +152,8 @@
                     <div class="grid grid-cols-2 gap-4 md:grid-cols-4">
                         <div class="flex flex-col gap-1 min-w-20">
                             <p class="text-sm">
-                                Average Income{security.financials.currency
-                                    ? ` (${security.financials.currency})`
+                                Average Income{financials.currency
+                                    ? ` (${financials.currency})`
                                     : ""}
                             </p>
                             <p
@@ -335,14 +334,14 @@
                     </tr>
                 </thead>
                 <tbody>
-                    {#if security.financials.financials.length === 0}
+                    {#if financials.financials.length === 0}
                         <tr>
                             <td colspan="7" class="text-center p-8 bg-gray-50"
                                 >No financial record found.</td
                             >
                         </tr>
                     {:else}
-                        {#each security.financials.financials as financial, idx}
+                        {#each financials.financials as financial, idx}
                             <tr>
                                 <td class="p-4 border-b border-r border-gray-300 bg-gray-50">
                                     <input 
@@ -361,7 +360,7 @@
                                         value={financial.income_statement.income.toLocaleString()} 
                                         onchange={(e) => {
                                             financial.income_statement.income = parseNumber((<HTMLInputElement>e.target).value)
-                                            security.analysis = generateAnalysis(security.financials.financials, security.assumptions)
+                                            security.analysis = generateAnalysis(financials.financials, security.assumptions)
                                         }}
                                     />
                                 </td>
@@ -371,7 +370,7 @@
                                         value={financial.income_statement.shares.toLocaleString()} 
                                         onchange={(e) => {
                                             financial.income_statement.shares = parseNumber((<HTMLInputElement>e.target).value)
-                                            security.analysis = generateAnalysis(security.financials.financials, security.assumptions)
+                                            security.analysis = generateAnalysis(financials.financials, security.assumptions)
                                         }}
                                     />
                                 </td>
@@ -386,9 +385,9 @@
                                 </td>
                                 <td class="p-4 border-b border-gray-300 bg-gray-50">
                                     <button class="bg-red-400 px-4 py-2 rounded-full cursor-pointer" onclick={() => {
-                                        security.financials.financials=[
-                                            ...security.financials.financials.slice(0, idx),
-                                            ...security.financials.financials.slice(idx + 1)
+                                        financials.financials=[
+                                            ...financials.financials.slice(0, idx),
+                                            ...financials.financials.slice(idx + 1)
                                         ];}}>
                                         Delete
                                     </button>
@@ -402,7 +401,7 @@
                 <button 
                     class="flex bg-blue-200 px-4 py-2 rounded-full cursor-pointer disabled:bg-gray-300 disabled:cursor-not-allowed"
                     onclick={() => {
-                        security.financials.financials.push({
+                        financials.financials.push({
                             date: new Date().toLocaleDateString('en-UK'), // format date as DD/MM/YYYY
                             income_statement: {
                                 income: 0,
