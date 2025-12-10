@@ -7,12 +7,16 @@ start_mongo().then(() => {
 	console.log('Mongo started');
 }).catch(e => { console.error(e) })
 
+
 // This hook checks if the user is authenticated before allowing access to protected routes
+const EXCEPTIONS = ['*'];	// skip auth for all paths for now
 export const handle: Handle = async ({ event, resolve }) => {
-	// skip auth for login page
-	if (event.url.pathname.startsWith('/login')) {
-		const response = await resolve(event);
-		return response;
+	// skip auth for paths in exceptions list
+	for (const path of EXCEPTIONS) {
+		if (path === '*' || event.url.pathname.startsWith(path)) {
+			const response = await resolve(event);
+			return response;
+		}
 	}
 
 	// get cookies from browser
