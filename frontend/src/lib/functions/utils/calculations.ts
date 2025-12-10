@@ -26,6 +26,15 @@ export function generateAnalysis(financials: Financial[], assumptions: Assumptio
 }
 
 /**
+ * Adjusts an array of values for inflation.
+ * @param {number[]} values - an array of numbers
+ * @returns {number[]} the inflation-adjusted array
+ */
+export function adjustForInflation(values: number[]) {
+    return values.map((value, index) => value * (1 + INTEREST_RATE) ** index);
+}
+
+/**
  * Calculates the average of an array of numbers.
  * @param {number[]} incomes - an array of numbers
  * @returns {number} the average of the array

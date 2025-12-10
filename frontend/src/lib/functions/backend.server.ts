@@ -36,3 +36,18 @@ export async function getExchangeRate(curr1: string, curr2: string): Promise<num
     }
     return await res.json();
 }
+
+
+export async function generatePrediction(body: {prices: number[]}): Promise<{growth_rate: number, predicted_average_income: number}> {
+    const res = await fetch(`${env.BACKEND_URL}/calculate/predict`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(body)
+    });
+    if (!res.ok) {
+        throw new Error(`Failed to generate prediction: ${res.statusText}`);
+    }
+    return await res.json();
+}

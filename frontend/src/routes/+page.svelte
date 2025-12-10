@@ -4,8 +4,8 @@
     import SecuritiesTable from "$lib/partials/SecuritiesTable.svelte";
     import LoadingOverlay from "$lib/components/LoadingOverlay.svelte";
     import ExchangeRatesDropdown from "$lib/partials/ExchangeRatesDropdown.svelte";
-    import { exportCsv } from "../lib/functions/utils/csvUtils";
-    import { saveSecurityOverview, updateSecurity, deleteSecurity, fetchSecurityOverview, fetchSecurityPrice } from "../lib/functions/api";
+    import { exportCsv } from "$lib/functions/utils/csvUtils";
+    import { saveSecurityOverview, updateSecurity, deleteSecurity, fetchSecurityOverview, fetchSecurityPrice } from "$lib/functions/api";
     import { invalidateAll } from "$app/navigation";
     import type { Security } from "$lib/types/schema";
 

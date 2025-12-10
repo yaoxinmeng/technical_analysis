@@ -2,8 +2,8 @@
     import type { PageProps } from "./$types";
     import { invalidateAll } from "$app/navigation";
     import SecurityPage from "$lib/partials/SecurityPage.svelte";
-    import type { Financial, Security } from "$lib/types/schema";
-    import { generateAnalysis, updateExistingFinancials } from "$lib/functions/utils/calculations";
+    import type { Financial, Security, Assumptions } from "$lib/types/schema";
+    import { generateAnalysis, updateExistingFinancials, adjustForInflation } from "$lib/functions/utils/calculations";
     import { updateSecurity } from "$lib/functions/api";
 
     let { data }: PageProps = $props();
@@ -69,6 +69,28 @@
         // refresh the page to show the updated price
         await invalidateAll();
     }
+
+    async function calculateAnalysis(financials: Financial[], assumptions: Assumptions) {
+        const prices = financials.map(f => f.income_statement.income);
+        const adjustedPrices = adjustForInflation(prices);
+        console.debug("Adjusted Prices:", adjustedPrices);
+        let res = await fetch(`/api/backend/calculate`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({prices: adjustedPrices.reverse()})
+        });
+        if (!res.ok) {
+            console.error(`Failed to generate predictions: ${res.statusText}`);
+            throw new Error(
+                `Failed to generate predictions: ${res.statusText}`,
+            );
+        }
+        const result = await res.json();
+        console.debug(result);
+        return generateAnalysis(financials, assumptions);
+    }
 </script>
 
 <SecurityPage
@@ -76,5 +98,5 @@
     rates={data.rates}
     {fetchFinancials}
     {saveSecurity}
-    {generateAnalysis}
+    generateAnalysis={calculateAnalysis}
 />

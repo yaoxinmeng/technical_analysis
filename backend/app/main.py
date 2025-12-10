@@ -4,6 +4,7 @@ from loguru import logger
 import traceback
 
 from app.core.logging import config_logger
+from app.schema.body import PredictRequestBody
 from app.service.yahoo_finance import scrape_price, scrape_main, scrape_financial_statement, scrape_balance
 from app.service.exchange_rate import get_exchange_rate
 
@@ -92,6 +93,24 @@ def get_exchange(curr1: str, curr2: str) -> float:
         if rate is None:
             raise HTTPException(status_code=404, detail="Exchange rate not found")
         return rate
+    except Exception as e:
+        logger.error(traceback.format_exc())
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/calculate/predict", response_model=dict)
+def generate_prediction(body: PredictRequestBody) -> dict:
+    """
+    Get the predicted growth rate and average income based on historical data.
+
+    :param data: List of historical data points.
+    :return: A dictionary containing the growth rate and predicted average income.
+    """
+    try:
+        from app.service.calculations import predict_values
+
+        gr, avg_income = predict_values(body.prices)
+        return {"growth_rate": gr, "predicted_average_income": avg_income}
     except Exception as e:
         logger.error(traceback.format_exc())
         raise HTTPException(status_code=500, detail=str(e))

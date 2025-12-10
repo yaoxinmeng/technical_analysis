@@ -8,7 +8,7 @@
         rates: { [key: string]: number };
         fetchFinancials: () => Promise<FinancialsOverview>;
         saveSecurity: (security: Security) => Promise<void>;
-        generateAnalysis: (financials: Financial[], assumptions: Assumptions) => Analysis;
+        generateAnalysis: (financials: Financial[], assumptions: Assumptions) => Promise<Analysis>;
     }
 
     let {
@@ -22,6 +22,7 @@
     let inProgress = $state(false);
     let assumptions = $state(security.assumptions);
     let financials = $state(security.financials);
+    let analysis = $state(security.analysis);
 
     let price = $derived(
         security.price.price === null ? null : convertPrice(
@@ -31,7 +32,6 @@
             security.financials.currency,
         ),
     );
-    let analysis = $derived(generateAnalysis(financials.financials, assumptions));
     let canSave = $derived(
         JSON.stringify(assumptions) !== JSON.stringify(security.assumptions) ||
         JSON.stringify(financials) !== JSON.stringify(security.financials)
@@ -114,9 +114,10 @@
                         type="number"
                         class="bg-white py-2 px-4 rounded-full"
                         value={assumptions.growth_rate * 100}
-                        onchange={(e) => {
+                        onchange={async (e) => {
                             let growthPercent = parseNumber((<HTMLInputElement>e.target).value);
                             assumptions.growth_rate = growthPercent / 100;
+                            analysis = await generateAnalysis(financials.financials, assumptions);
                         }}
                     />
                 </div>
@@ -358,9 +359,9 @@
                                         type="text" 
                                         class="p-1 rounded-lg"
                                         value={financial.income_statement.income.toLocaleString()} 
-                                        onchange={(e) => {
+                                        onchange={async (e) => {
                                             financial.income_statement.income = parseNumber((<HTMLInputElement>e.target).value)
-                                            security.analysis = generateAnalysis(financials.financials, security.assumptions)
+                                            analysis = await generateAnalysis(financials.financials, security.assumptions)
                                         }}
                                     />
                                 </td>
@@ -368,9 +369,9 @@
                                     <input 
                                         type="text" 
                                         value={financial.income_statement.shares.toLocaleString()} 
-                                        onchange={(e) => {
+                                        onchange={async (e) => {
                                             financial.income_statement.shares = parseNumber((<HTMLInputElement>e.target).value)
-                                            security.analysis = generateAnalysis(financials.financials, security.assumptions)
+                                            analysis = await generateAnalysis(financials.financials, security.assumptions)
                                         }}
                                     />
                                 </td>
