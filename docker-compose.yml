@@ -10,13 +10,13 @@ services:
       - MONGO_PASSWORD=${MONGO_INITDB_ROOT_PASSWORD}
       - ROOT_USERNAME
       - ROOT_PASSWORD
-      - BACKEND_URL=http://scraper:8000
+      - BACKEND_URL=http://backend:8000
       - ORIGIN=http://localhost:3000
     ports:
       - "3000:3000"
 
-  scraper:
-    build: ./backend/scraper
+  backend:
+    build: ./backend
     environment:
       - ENV=debug
       - PLAYWRIGHT_TIMEOUT=5000
