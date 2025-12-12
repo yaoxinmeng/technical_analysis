@@ -1,4 +1,5 @@
 <script lang="ts">
+    import { onMount } from 'svelte';
     import type { PageProps } from "./$types";
     import { invalidateAll } from "$app/navigation";
     import SecurityPage from "$lib/partials/SecurityPage.svelte";

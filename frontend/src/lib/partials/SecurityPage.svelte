@@ -34,13 +34,17 @@
     );
     let canSave = $derived(
         JSON.stringify(assumptions) !== JSON.stringify(security.assumptions) ||
-        JSON.stringify(financials) !== JSON.stringify(security.financials)
+        JSON.stringify(financials) !== JSON.stringify(security.financials) ||
+        JSON.stringify(analysis) !== JSON.stringify(security.analysis)
     );
 
     async function handleFetch() {
         inProgress = true;
         try {
             financials = await fetchFinancials();
+            let [averageIncome, growthRate] = await predictAverageIncome(financials.financials.map(f => f.income_statement.income));
+            analysis.average_income = averageIncome;
+            analysis.cagr = growthRate;
         } catch (error) {
             console.error("Error fetching financials:", error);
         }
