@@ -7,6 +7,7 @@ from app.core.logging import config_logger
 from app.schema.body import PredictRequestBody
 from app.service.yahoo_finance import scrape_price, scrape_main, scrape_financial_statement, scrape_balance
 from app.service.exchange_rate import get_exchange_rate
+from app.service.calculations import predict_values, fallback_predict_average_income
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -107,13 +108,16 @@ def generate_prediction(body: PredictRequestBody) -> dict:
     :return: A dictionary containing the growth rate and predicted average income.
     """
     try:
-        from app.service.calculations import predict_values
-
         gr, avg_income = predict_values(body.prices)
         return {"growth_rate": gr, "predicted_average_income": avg_income}
     except Exception as e:
-        logger.error(traceback.format_exc())
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.info(e)
+        try:
+            gr, avg_income = fallback_predict_average_income(body.prices)
+            return {"growth_rate": gr, "predicted_average_income": avg_income}
+        except Exception as e:
+            logger.error(traceback.format_exc())
+            raise HTTPException(status_code=500, detail=str(e))
     
 
 if __name__ == "__main__":
