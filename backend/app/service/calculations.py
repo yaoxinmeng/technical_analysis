@@ -1,7 +1,9 @@
 from scipy.optimize import curve_fit
+import numpy as np
+from loguru import logger
 
 
-def _predict_exponential_value(x: int | float, gr: float, v0: float) -> float:
+def _predict_exponential_value(x: int | float, m: float, c: float) -> float:
     """
     Predict the y value for a given x using the exponential regression parameters.
 
@@ -10,7 +12,7 @@ def _predict_exponential_value(x: int | float, gr: float, v0: float) -> float:
     :param v0: Initial value parameter.
     :return: Predicted y value.
     """
-    return v0 * gr ** x
+    return c + m * x
     
 
 def _exponential_regression(x_data: list[int | float], y_data: list[int | float]) -> tuple[float, float, float]:
@@ -24,7 +26,7 @@ def _exponential_regression(x_data: list[int | float], y_data: list[int | float]
     # Perform curve fitting
     params, _ = curve_fit(_predict_exponential_value, x_data, y_data)
 
-    return params.tolist()  # gr, v0
+    return params.tolist()  # m, c
 
 
 def predict_values(data: list[float]) -> tuple[float, float]:
@@ -37,6 +39,10 @@ def predict_values(data: list[float]) -> tuple[float, float]:
     assert len(data) >= 2, "Data must contain at least two points for regression."
 
     x_data = list(range(len(data)))
-    gr, v0 = _exponential_regression(x_data, data)
+    m, c = _exponential_regression(x_data, np.log(data))
 
-    return gr, _predict_exponential_value(x_data[-1], gr, v0)
+    predicted_ys = np.exp([_predict_exponential_value(x, m, c) for x in x_data])
+    avg_income = sum(predicted_ys) / len(predicted_ys)
+    gr = np.exp(m)
+    logger.debug(f"Predicted values: {predicted_ys}, Growth Rate: {gr}, Average Income: {avg_income}")
+    return gr-1, avg_income

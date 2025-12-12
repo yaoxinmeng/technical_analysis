@@ -1,14 +1,14 @@
 <script lang="ts">
     import Loading from "$lib/components/LoadingIcon.svelte";
-    import type { Security, Financial, Assumptions, Analysis, FinancialsOverview } from "$lib/types/schema";
-    import { convertPrice } from "$lib/functions/utils/calculations";
+    import type { Security, FinancialsOverview } from "$lib/types/schema";
+    import { convertPrice, calculateGeneralStats, generateTargets } from "$lib/functions/utils/calculations";
 
     interface Props {
         security: Security;
         rates: { [key: string]: number };
         fetchFinancials: () => Promise<FinancialsOverview>;
         saveSecurity: (security: Security) => Promise<void>;
-        generateAnalysis: (financials: Financial[], assumptions: Assumptions) => Promise<Analysis>;
+        predictAverageIncome: (incomes: number[]) => Promise<number[]>;
     }
 
     let {
@@ -16,7 +16,7 @@
         rates,
         fetchFinancials,
         saveSecurity,
-        generateAnalysis
+        predictAverageIncome
     }: Props = $props();
     
     let inProgress = $state(false);
@@ -65,6 +65,14 @@
             return 0;
         }
         return Number.parseFloat(value.replace(/,/g, ""));
+    }
+
+    function updateAnalysis() {
+        analysis = {
+            ...analysis,
+            ...generateTargets(analysis.average_income, financials.financials[0].income_statement.shares, assumptions),
+            ...calculateGeneralStats(financials.financials)
+        }
     }
 </script>
 
@@ -117,7 +125,7 @@
                         onchange={async (e) => {
                             let growthPercent = parseNumber((<HTMLInputElement>e.target).value);
                             assumptions.growth_rate = growthPercent / 100;
-                            analysis = await generateAnalysis(financials.financials, assumptions);
+                            updateAnalysis();
                         }}
                     />
                 </div>
@@ -128,7 +136,7 @@
                         id="horizon"
                         type="number"
                         class="bg-gray-200 py-2 px-4 rounded-full"
-                        bind:value={assumptions.years}
+                        value={assumptions.years}
                     />
                 </div>
                 <div class="flex flex-col gap-1">
@@ -360,8 +368,11 @@
                                         class="p-1 rounded-lg"
                                         value={financial.income_statement.income.toLocaleString()} 
                                         onchange={async (e) => {
-                                            financial.income_statement.income = parseNumber((<HTMLInputElement>e.target).value)
-                                            analysis = await generateAnalysis(financials.financials, security.assumptions)
+                                            financial.income_statement.income = parseNumber((<HTMLInputElement>e.target).value);
+                                            let [averageIncome, growthRate] = await predictAverageIncome(financials.financials.map(f => f.income_statement.income));
+                                            analysis.average_income = averageIncome;
+                                            analysis.cagr = growthRate;
+                                            updateAnalysis();
                                         }}
                                     />
                                 </td>
@@ -370,8 +381,8 @@
                                         type="text" 
                                         value={financial.income_statement.shares.toLocaleString()} 
                                         onchange={async (e) => {
-                                            financial.income_statement.shares = parseNumber((<HTMLInputElement>e.target).value)
-                                            analysis = await generateAnalysis(financials.financials, security.assumptions)
+                                            financial.income_statement.shares = parseNumber((<HTMLInputElement>e.target).value);
+                                            updateAnalysis();
                                         }}
                                     />
                                 </td>

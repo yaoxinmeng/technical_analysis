@@ -2,8 +2,8 @@
     import type { PageProps } from "./$types";
     import { invalidateAll } from "$app/navigation";
     import SecurityPage from "$lib/partials/SecurityPage.svelte";
-    import type { Financial, Security, Assumptions } from "$lib/types/schema";
-    import { generateAnalysis, updateExistingFinancials, adjustForInflation } from "$lib/functions/utils/calculations";
+    import type { Financial, Security } from "$lib/types/schema";
+    import { updateExistingFinancials, adjustForInflation } from "$lib/functions/utils/calculations";
     import { updateSecurity } from "$lib/functions/api";
 
     let { data }: PageProps = $props();
@@ -70,16 +70,15 @@
         await invalidateAll();
     }
 
-    async function calculateAnalysis(financials: Financial[], assumptions: Assumptions) {
-        const prices = financials.map(f => f.income_statement.income);
-        const adjustedPrices = adjustForInflation(prices);
-        console.debug("Adjusted Prices:", adjustedPrices);
+    async function predictAverageIncome(incomes: number[]): Promise<number[]> {
+        const adjustedIncomes = adjustForInflation(incomes);
+        console.debug("Adjusted incomes:", adjustedIncomes);
         let res = await fetch(`/api/backend/calculate`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify({prices: adjustedPrices.reverse()})
+            body: JSON.stringify({prices: adjustedIncomes.reverse()})
         });
         if (!res.ok) {
             console.error(`Failed to generate predictions: ${res.statusText}`);
@@ -88,8 +87,7 @@
             );
         }
         const result = await res.json();
-        console.debug(result);
-        return generateAnalysis(financials, assumptions);
+        return [result.predicted_average_income, result.growth_rate];
     }
 </script>
 
@@ -98,5 +96,5 @@
     rates={data.rates}
     {fetchFinancials}
     {saveSecurity}
-    generateAnalysis={calculateAnalysis}
+    {predictAverageIncome}
 />

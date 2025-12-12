@@ -25,6 +25,30 @@ export function generateAnalysis(financials: Financial[], assumptions: Assumptio
     }
 }
 
+export function generateTargets(averageIncome: number, shares: number, assumptions: Assumptions) {
+    let target = calculateGpSum(averageIncome, 1 + assumptions.growth_rate, assumptions.years) / shares;
+    let nominalTarget = averageIncome * assumptions.years / shares;
+    return {
+        upper: target * (1 + assumptions.safety_margin),
+        lower: target * (1 - assumptions.safety_margin),
+        target: target,
+        nominal_upper: nominalTarget * (1 + assumptions.safety_margin),
+        nominal_lower: nominalTarget * (1 - assumptions.safety_margin),
+        nominal_target: nominalTarget,
+    };
+}
+
+export function calculateGeneralStats(financials: Financial[]) {
+    const incomes = financials.map((f) => f.income_statement.income);
+    const latestBalance = financials[0].balance_sheet;
+    const latestShares = financials[0].income_statement.shares;
+    return {
+        de_ratio: latestBalance.liabilities / latestBalance.assets,
+        bvps: latestBalance.book_value / latestShares,
+        // cagr: (incomes[0] / incomes[incomes.length - 1]) ** (1 / (incomes.length - 1)) - 1 || -1
+    }
+}
+
 /**
  * Adjusts an array of values for inflation.
  * @param {number[]} values - an array of numbers
@@ -111,7 +135,14 @@ export function updateExistingFinancials(existing: Financial[], newFinancials: F
     return finalFinancials;
 }
 
-
+/**
+ * Converts a price from one currency to another using provided exchange rates.
+ * @param {number} price - the price to convert
+ * @param {Object} rates - an object containing exchange rates with keys in the format "FROM-TO"
+ * @param {string} from - the currency code of the original price
+ * @param {string} to - the currency code to convert the price to
+ * @returns {number} the converted price
+ */
 export function convertPrice(price: number, rates: { [key: string]: number }, from: string, to: string) {
     if (!price || !from || !to) {
         return price;
