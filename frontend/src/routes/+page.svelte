@@ -35,6 +35,7 @@
             await handleFetchPrice(securityId);
             openDialog = false;
             inProgress = false;
+            hasFailed = false;
             // refresh the page to show the new security
             await invalidateAll();
         } catch (err: any) {

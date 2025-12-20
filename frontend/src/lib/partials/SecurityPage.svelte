@@ -124,7 +124,7 @@
                     <input
                         id="growth"
                         type="number"
-                        class="bg-white py-2 px-4 rounded-full"
+                        class="bg-white border border-black py-2 px-4 rounded-full"
                         value={assumptions.growth_rate * 100}
                         onchange={async (e) => {
                             let growthPercent = parseNumber((<HTMLInputElement>e.target).value);
