@@ -45,6 +45,7 @@
             let [averageIncome, growthRate] = await predictAverageIncome(financials.financials.map(f => f.income_statement.income));
             analysis.average_income = averageIncome;
             analysis.cagr = growthRate;
+            updateAnalysis();
         } catch (error) {
             console.error("Error fetching financials:", error);
         }
