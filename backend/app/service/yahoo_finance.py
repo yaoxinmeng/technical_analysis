@@ -160,7 +160,7 @@ def scrape_financial_statement(id: str) -> dict[str, dict[str, int]]:
                     logger.error(f"Error converting shares value to float for {h} in {id}: {e}")
                     shares = 0
                 results[h] = {
-                    "income": income if results.get(h, 0) == 0 else results[h]["income"],   # prefer first non-zero income
+                    "income": income if results.get(h, {}).get("income", 0) == 0 else results[h]["income"],   # prefer first non-zero income
                     "shares": shares
                 }
         return results
