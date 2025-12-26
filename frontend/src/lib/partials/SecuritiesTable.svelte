@@ -1,5 +1,6 @@
 <script lang="ts">
     import Loading from "$lib/components/LoadingIcon.svelte";
+    import OpenInNew from "$lib/icons/OpenInNew.svelte";
     import type { Security } from "$lib/types/schema";
     import { convertPrice } from "$lib/functions/utils/calculations";
 
@@ -119,7 +120,10 @@
                             >{row.symbol}</td
                         >
                         <td class="p-4 border-b border-gray-300 bg-gray-50"
-                            >{row.name}</td
+                            ><span class="flex items-center gap-2">
+                                {row.name} 
+                                <a href={`https://sg.finance.yahoo.com/quote/${row.symbol}`} target="_blank"><OpenInNew size={16} /></a>
+                            </span></td
                         >
                         <td class="p-4 border-b border-gray-300 bg-gray-50"
                             >{row.sector}</td
