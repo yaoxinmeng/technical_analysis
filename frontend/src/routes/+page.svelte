@@ -6,7 +6,7 @@
     import ExchangeRatesDropdown from "$lib/partials/ExchangeRatesDropdown.svelte";
     import { exportCsv } from "$lib/functions/utils/csvUtils";
     import { saveSecurityOverview, updateSecurity, deleteSecurity, fetchSecurityOverview, fetchSecurityPrice } from "$lib/functions/api";
-    import { invalidateAll } from "$app/navigation";
+    import { goto, invalidateAll } from "$app/navigation";
     import type { Security } from "$lib/types/schema";
 
     let { data }: PageProps = $props();
@@ -31,13 +31,14 @@
             console.log(result);
             // save the security to the watchlist
             await saveSecurityOverview(securityId, result.name, result.sector, result.exchange_currency);
+            await invalidateAll();
             // fetch prices for the new security
             await handleFetchPrice(securityId);
             openDialog = false;
             inProgress = false;
             hasFailed = false;
-            // refresh the page to show the new security
-            await invalidateAll();
+            // go to the page of the new security
+            await goto(`/${securityId}`);
         } catch (err: any) {
             console.error(err);
             hasFailed = true;
