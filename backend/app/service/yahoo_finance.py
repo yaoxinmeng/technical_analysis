@@ -129,37 +129,41 @@ def scrape_financial_statement(id: str) -> dict[str, dict[str, int]]:
         headers = headers[1:] 
 
         # get relevant data rows
-        income_div = soup.find("div", string="Diluted NI available to com stockholders")
-        if not income_div:
-            income_div = soup.find("div", string="Net income common stockholders")  # fallback for some companies
-        income_row = income_div.find_parent().find_next_siblings()
-        if len(income_row) < 2:
-            logger.error(f"Not enough data rows found in financials page for {id}.")
-            return {}
-        shares_row = soup.find("div", string="Diluted average shares").find_parent().find_next_siblings()
-        if len(shares_row) < 2:
-            logger.error(f"Not enough data rows found in financials page for {id}.")
-            return {}
-        
         results = {}
-        for h, income, shares in zip(headers, income_row, shares_row):
-            income_value = income.get_text(strip=True).replace(",", "")
-            shares_value = shares.get_text(strip=True).replace(",", "")
-            try:
-                income = int(float(income_value) * 1000) if income_value else 0
-            except ValueError as e:
-                logger.error(f"Error converting income value to float for {h} in {id}: {e}")
-                income = 0
-            try:
-                shares = int(float(shares_value) * 1000) if shares_value else 0
-            except ValueError as e:
-                logger.error(f"Error converting shares value to float for {h} in {id}: {e}")
-                shares = 0
-            results[h] = {
-                "income": income,
-                "shares": shares
-            }
-        return results   
+        income_divs = [
+            soup.find("div", string="Diluted NI available to com stockholders"),
+            soup.find("div", string="Net income common stockholders")  # fallback for some companies
+        ]
+        for income_div in income_divs:
+            if not income_div:
+                continue
+            income_row = income_div.find_parent().find_next_siblings()
+            if len(income_row) < 2:
+                logger.error(f"Not enough data rows found in financials page for {id}.")
+                continue
+            shares_row = soup.find("div", string="Diluted average shares").find_parent().find_next_siblings()
+            if len(shares_row) < 2:
+                logger.error(f"Not enough data rows found in financials page for {id}.")
+                continue
+
+            for h, income, shares in zip(headers, income_row, shares_row):
+                income_value = income.get_text(strip=True).replace(",", "")
+                shares_value = shares.get_text(strip=True).replace(",", "")
+                try:
+                    income = int(float(income_value) * 1000) if income_value else 0
+                except ValueError as e:
+                    logger.error(f"Error converting income value to float for {h} in {id}: {e}")
+                    income = 0
+                try:
+                    shares = int(float(shares_value) * 1000) if shares_value else 0
+                except ValueError as e:
+                    logger.error(f"Error converting shares value to float for {h} in {id}: {e}")
+                    shares = 0
+                results[h] = {
+                    "income": income if results.get(h, 0) == 0 else results[h]["income"],   # prefer first non-zero income
+                    "shares": shares
+                }
+        return results
 
     def parse_currency(soup: bs4.BeautifulSoup) -> str:
         """
