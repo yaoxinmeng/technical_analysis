@@ -3,19 +3,19 @@ import numpy as np
 from loguru import logger
 
 
-def _predict_exponential_value(x: int | float, m: float, c: float) -> float:
+def _predict_y_value(x: int | float, m: float, c: float) -> float:
     """
     Predict the y value for a given x using the exponential regression parameters.
 
     :param x: The x value.
-    :param gr: Growth rate parameter.
-    :param v0: Initial value parameter.
+    :param m: Slope parameter.
+    :param c: Intercept parameter.
     :return: Predicted y value.
     """
     return c + m * x
     
 
-def _exponential_regression(x_data: list[int | float], y_data: list[int | float]) -> tuple[float, float]:
+def _regression(x_data: list[int | float], y_data: list[int | float]) -> tuple[float, float]:
     """
     Perform exponential regression on the given data.
 
@@ -24,7 +24,7 @@ def _exponential_regression(x_data: list[int | float], y_data: list[int | float]
     :return: Tuple containing the parameters (gr, v0) of the fitted curve.
     """
     # Perform curve fitting
-    params, _ = curve_fit(_predict_exponential_value, x_data, y_data)
+    params, _ = curve_fit(_predict_y_value, x_data, y_data)
 
     return params.tolist()  # m, c
 
@@ -36,19 +36,24 @@ def predict_values(y_data: list[float]) -> tuple[float, float]:
     :param data: List of y values.
     :return: tuple containing the average growth rate and the predicted average income.
     """
+    logger.debug(f"Input data for prediction: {y_data}")
     assert len(y_data) >= 2, "Data must contain at least two points for regression."
-    data = [(i, y) for i, y in enumerate(y_data) if y > 0]
-    assert len(data) >= 2, "Insufficient valid data points for regression."
+    x_data = range(len(y_data))
 
-    x_data = [data_point[0] for data_point in data]
-    y_data = [data_point[1] for data_point in data]
-    m, c = _exponential_regression(x_data, np.log(y_data))
+    # calculate factor to divide y_data to avoid overflow
+    min_y = min(y_data)
+    factor = 1
+    while min_y > 1:
+        factor *= 10
+        min_y /= 10
+    m, c = _regression(x_data, [y / factor for y in y_data])
 
-    predicted_ys = np.exp([_predict_exponential_value(x, m, c) for x in x_data])
+    predicted_ys = [_predict_y_value(x, m, c) * factor for x in x_data]
     avg_income = sum(predicted_ys) / len(predicted_ys)
-    gr = np.exp(m)
-    logger.debug(f"Predicted values: {predicted_ys}, Growth Rate: {gr}, Average Income: {avg_income}")
-    return gr-1, avg_income
+    gr = predicted_ys[-1] / predicted_ys[0] if predicted_ys[0] != 0 else 0
+    cagr = gr ** (1 / (len(predicted_ys) - 1))  # convert to growth rate
+    logger.debug(f"Predicted values: {predicted_ys}, Growth Rate: {cagr}, Average Income: {avg_income}")
+    return cagr-1, avg_income
 
 
 def fallback_predict_average_income(data: list[float]) -> tuple[float, float]:
